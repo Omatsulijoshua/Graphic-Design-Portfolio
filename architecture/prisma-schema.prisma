@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(EDITOR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  coverImage  String?
+  sortOrder   Int       @default(0)
+  isVisible   Boolean   @default(true)
+  albums      Album[]
+  projects    Project[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Album {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String
+  description String?
+  projectDate DateTime?
+  projectType String?
+  clientName  String?
+  price       Decimal?
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  projects    Project[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([categoryId, slug])
+}
+
+model Project {
+  id             String       @id @default(cuid())
+  title          String
+  slug           String       @unique
+  description    String
+  price          Decimal
+  deliveryTime   String?
+  services       String[]
+  tags           String[]
+  featuredImage  String?
+  seoTitle       String?
+  seoDescription String?
+  isPublished    Boolean      @default(true)
+  isPopular      Boolean      @default(false)
+  viewCount      Int          @default(0)
+  categoryId     String
+  albumId        String?
+  category       Category     @relation(fields: [categoryId], references: [id])
+  album          Album?       @relation(fields: [albumId], references: [id])
+  images         ProjectImage[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model ProjectImage {
+  id        String   @id @default(cuid())
+  url       String
+  publicId  String?
+  width     Int?
+  height    Int?
+  alt       String?
+  sortOrder Int      @default(0)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id          String        @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  service     String?
+  budget      String?
+  message     String
+  status      MessageStatus @default(UNREAD)
+  replyStatus ReplyStatus   @default(PENDING)
+  createdAt   DateTime      @default(now())
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  path      String?
+  projectId String?
+  categoryId String?
+  country   String?
+  city      String?
+  device    String?
+  browser   String?
+  source    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+enum AdminRole {
+  OWNER
+  EDITOR
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum ReplyStatus {
+  PENDING
+  REPLIED
+}

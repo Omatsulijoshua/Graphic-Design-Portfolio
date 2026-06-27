@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JOSHGRAPHIX_WORLD Admin Dashboard Preview</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="index.html">
+          <span class="brand-mark">JG</span>
+          <span><strong>Admin</strong><small>Dashboard Preview</small></span>
+        </a>
+        <nav class="nav-links" style="display:flex;flex-direction:column;align-items:stretch;margin-top:1.5rem">
+          <a href="#overview">Overview</a>
+          <a href="#categories">Categories</a>
+          <a href="#projects">Projects</a>
+          <a href="#messages">Messages</a>
+          <a href="index.html">View Site</a>
+        </nav>
+      </aside>
+      <section class="admin-main">
+        <p class="eyebrow">Secure admin foundation</p>
+        <h1 style="font-size:clamp(2.4rem,5vw,4.6rem)">JOSHGRAPHIX_WORLD Dashboard</h1>
+        <p class="hero-copy">This preview shows the dashboard structure for the future authenticated Next.js, Prisma, PostgreSQL, Cloudinary, and analytics build.</p>
+
+        <div class="admin-grid" id="overview">
+          <article class="admin-card"><span>Total Visitors</span><strong>12,480</strong></article>
+          <article class="admin-card"><span>Projects</span><strong>774</strong></article>
+          <article class="admin-card"><span>Albums</span><strong>43</strong></article>
+          <article class="admin-card"><span>Messages</span><strong>18</strong></article>
+          <article class="admin-card"><span>WhatsApp Clicks</span><strong>326</strong></article>
+          <article class="admin-card"><span>Storage Usage</span><strong>38%</strong></article>
+        </div>
+
+        <section id="categories">
+          <div class="section-head">
+            <p class="eyebrow">Category management</p>
+            <h2>Create, edit, hide, reorder, and update cover images.</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Category</th><th>Projects</th><th>Status</th><th>Cover</th><th>Order</th></tr></thead>
+              <tbody data-admin-categories></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="projects" class="section" style="padding-left:0;padding-right:0">
+          <div class="section-head">
+            <p class="eyebrow">Project management</p>
+            <h2>Upload images, assign albums, set price, SEO details, and tags.</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Project</th><th>Category</th><th>Price</th><th>Delivery</th><th>SEO</th></tr></thead>
+              <tbody data-admin-projects></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="messages">
+          <div class="section-head">
+            <p class="eyebrow">Messages</p>
+            <h2>Unread, read, archived, reply status, search, and export are planned here.</h2>
+          </div>
+          <div class="admin-grid">
+            <article class="admin-card"><span>Unread</span><strong>7</strong></article>
+            <article class="admin-card"><span>Read</span><strong>11</strong></article>
+            <article class="admin-card"><span>Archived</span><strong>42</strong></article>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="data.js"></script>
+    <script>
+      const data = window.JGW_DATA;
+      const money = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
+      document.querySelector("[data-admin-categories]").innerHTML = data.categories.map((category, index) => `
+        <tr><td>${category.name}</td><td>${category.projects}</td><td>Visible</td><td>Editable</td><td>${index + 1}</td></tr>
+      `).join("");
+      document.querySelector("[data-admin-projects]").innerHTML = data.projects.map((project) => {
+        const category = data.categories.find((item) => item.id === project.category);
+        return `<tr><td>${project.title}</td><td>${category.name}</td><td>${money.format(project.price)}</td><td>${project.delivery}</td><td>Ready</td></tr>`;
+      }).join("");
+    </script>
+  </body>
+</html>
