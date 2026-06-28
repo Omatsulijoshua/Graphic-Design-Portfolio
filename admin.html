@@ -8,7 +8,26 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main class="admin-shell">
+    <section class="login-screen" data-login-screen>
+      <form class="login-card" data-login-form>
+        <a class="brand" href="index.html">
+          <span class="brand-mark">JG</span>
+          <span><strong>JOSHGRAPHIX_WORLD</strong><small>Admin Login</small></span>
+        </a>
+        <div>
+          <p class="eyebrow">Private access</p>
+          <h1>Admin Login</h1>
+          <p class="hero-copy">Sign in to view the JOSHGRAPHIX_WORLD dashboard.</p>
+        </div>
+        <label>Email<input name="email" type="email" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="button primary" type="submit">Login</button>
+        <p class="form-status" data-login-status role="status"></p>
+        <a class="button ghost" href="index.html">Back to Website</a>
+      </form>
+    </section>
+
+    <main class="admin-shell" data-admin-shell hidden>
       <aside class="admin-sidebar">
         <a class="brand" href="index.html">
           <span class="brand-mark">JG</span>
@@ -19,6 +38,7 @@
           <a href="#categories">Categories</a>
           <a href="#projects">Projects</a>
           <a href="#messages">Messages</a>
+          <button class="button ghost" type="button" data-logout>Logout</button>
           <a href="index.html">View Site</a>
         </nav>
       </aside>
@@ -28,12 +48,12 @@
         <p class="hero-copy">This preview shows the dashboard structure for the future authenticated Next.js, Prisma, PostgreSQL, Cloudinary, and analytics build.</p>
 
         <div class="admin-grid" id="overview">
-          <article class="admin-card"><span>Total Visitors</span><strong>12,480</strong></article>
-          <article class="admin-card"><span>Projects</span><strong>774</strong></article>
-          <article class="admin-card"><span>Albums</span><strong>43</strong></article>
-          <article class="admin-card"><span>Messages</span><strong>18</strong></article>
-          <article class="admin-card"><span>WhatsApp Clicks</span><strong>326</strong></article>
-          <article class="admin-card"><span>Storage Usage</span><strong>38%</strong></article>
+          <article class="admin-card"><span>Total Visitors</span><strong>0</strong></article>
+          <article class="admin-card"><span>Projects</span><strong data-admin-project-count>0</strong></article>
+          <article class="admin-card"><span>Albums</span><strong data-admin-album-count>0</strong></article>
+          <article class="admin-card"><span>Messages</span><strong>0</strong></article>
+          <article class="admin-card"><span>Contact Clicks</span><strong>0</strong></article>
+          <article class="admin-card"><span>Storage Usage</span><strong>0%</strong></article>
         </div>
 
         <section id="categories">
@@ -68,24 +88,14 @@
             <h2>Unread, read, archived, reply status, search, and export are planned here.</h2>
           </div>
           <div class="admin-grid">
-            <article class="admin-card"><span>Unread</span><strong>7</strong></article>
-            <article class="admin-card"><span>Read</span><strong>11</strong></article>
-            <article class="admin-card"><span>Archived</span><strong>42</strong></article>
+            <article class="admin-card"><span>Unread</span><strong>0</strong></article>
+            <article class="admin-card"><span>Read</span><strong>0</strong></article>
+            <article class="admin-card"><span>Archived</span><strong>0</strong></article>
           </div>
         </section>
       </section>
     </main>
     <script src="data.js"></script>
-    <script>
-      const data = window.JGW_DATA;
-      const money = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
-      document.querySelector("[data-admin-categories]").innerHTML = data.categories.map((category, index) => `
-        <tr><td>${category.name}</td><td>${category.projects}</td><td>Visible</td><td>Editable</td><td>${index + 1}</td></tr>
-      `).join("");
-      document.querySelector("[data-admin-projects]").innerHTML = data.projects.map((project) => {
-        const category = data.categories.find((item) => item.id === project.category);
-        return `<tr><td>${project.title}</td><td>${category.name}</td><td>${money.format(project.price)}</td><td>${project.delivery}</td><td>Ready</td></tr>`;
-      }).join("");
-    </script>
+    <script src="admin.js"></script>
   </body>
 </html>

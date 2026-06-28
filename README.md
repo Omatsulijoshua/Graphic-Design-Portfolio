@@ -25,6 +25,10 @@ Most visible content lives in `data.js`.
 
 Run `node preview-server.cjs` and open `http://127.0.0.1:4173`.
 
+## Admin
+
+Open `admin.html` to sign in with the configured admin email and password. The current login is a static front-end gate for the dashboard preview; production security should be handled by the future Next.js/backend phase.
+
 ## Next production phases
 
 1. Rebuild this UI in Next.js App Router with TypeScript and Tailwind CSS.

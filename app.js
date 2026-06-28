@@ -2,7 +2,9 @@
   const data = window.JGW_DATA;
   const money = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
   const whatsappText = "Hello JOSHGRAPHIX_WORLD,%0AI saw your portfolio and I'm interested in your services.";
-  const whatsappUrl = (extra = "") => `https://wa.me/${data.contact.whatsapp}?text=${whatsappText}${extra ? "%0A" + encodeURIComponent(extra) : ""}`;
+  const whatsappUrl = (extra = "") => data.contact.whatsapp
+    ? `https://wa.me/${data.contact.whatsapp}?text=${whatsappText}${extra ? "%0A" + encodeURIComponent(extra) : ""}`
+    : "";
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
@@ -31,7 +33,7 @@
       <article class="category-card" tabindex="0" role="button" data-category-id="${category.id}" style="--cover:${category.cover}">
         <div>
           <strong>${category.name}</strong>
-          <span>${category.projects} Projects</span>
+          <span>${categoryProjectCount(category.id)} Projects</span>
           <span>Click to View</span>
         </div>
       </article>
@@ -70,13 +72,13 @@
     $("[data-gallery-title]").textContent = selected.name;
     $("[data-gallery-summary]").textContent = selected.description;
     $("[data-gallery-kicker]").textContent = `${categoryProjectCount(selected.id)} live samples shown`;
-    $("[data-albums]").innerHTML = selected.albums.map((album) => `
+    $("[data-albums]").innerHTML = selected.albums.length ? selected.albums.map((album) => `
       <article class="album-chip">
         <strong>${album.title}</strong>
         <p>${album.description}</p>
         <p>${album.date} · ${album.type}</p>
       </article>
-    `).join("");
+    `).join("") : `<article class="album-chip"><strong>No albums yet</strong><p>Add real albums from the future admin dashboard.</p></article>`;
     $("[data-projects]").innerHTML = projects.map((project) => `
       <article class="project-card" data-project-id="${project.id}">
         <div class="project-art" style="--art:${project.art};--height:${project.height}">
@@ -88,7 +90,7 @@
           <p class="price">${money.format(project.price)}</p>
         </div>
       </article>
-    `).join("") || `<p>No projects matched your search.</p>`;
+    `).join("") || `<p>No real projects have been added yet.</p>`;
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -111,6 +113,7 @@
 
   function updateModal() {
     const project = activeProjectSet[activeProjectIndex];
+    if (!project) return;
     const category = data.categories.find((item) => item.id === project.category);
     $("[data-modal-image]").src = projectImage(project);
     $("[data-modal-image]").alt = project.title;
@@ -131,16 +134,25 @@
 
   function renderPricing() {
     const featured = data.projects.slice(0, 6);
-    $("[data-pricing]").innerHTML = featured.map((project) => `
+    $("[data-pricing]").innerHTML = featured.length ? featured.map((project) => `
       <article class="pricing-card">
         <h3>${project.title}</h3>
         <p>${project.services.join(", ")}</p>
         <strong>${money.format(project.price)}</strong>
       </article>
-    `).join("");
+    `).join("") : `<article class="pricing-card"><h3>No pricing samples yet</h3><p>Add real prices when your first portfolio projects are uploaded.</p><strong>Pending</strong></article>`;
   }
 
   function renderTestimonials(index = 0) {
+    if (!data.testimonials.length) {
+      $("[data-testimonial]").dataset.index = "0";
+      $("[data-testimonial]").innerHTML = `
+        <div class="stars">Pending</div>
+        <blockquote>No client testimonials have been added yet.</blockquote>
+        <footer><strong>JOSHGRAPHIX_WORLD</strong></footer>
+      `;
+      return;
+    }
     const item = data.testimonials[index % data.testimonials.length];
     $("[data-testimonial]").dataset.index = index;
     $("[data-testimonial]").innerHTML = `
@@ -158,7 +170,14 @@
       </details>
     `).join("");
     $("[data-socials]").innerHTML = data.contact.socials.map((social) => `<a href="#" aria-label="${social}">${social}</a>`).join("");
-    $$("[data-whatsapp]").forEach((link) => { link.href = whatsappUrl(); });
+    $$("[data-whatsapp]").forEach((link) => {
+      if (data.contact.whatsapp) {
+        link.href = whatsappUrl();
+      } else {
+        link.href = `mailto:${data.contact.email}`;
+        link.textContent = "Email";
+      }
+    });
   }
 
   function animateCounters() {
@@ -169,6 +188,11 @@
         const el = entry.target;
         const target = Number(el.dataset.counter);
         const suffix = el.dataset.suffix || "+";
+        if (target === 0) {
+          el.textContent = el.dataset.suffix ? `0${el.dataset.suffix}` : "0";
+          observer.unobserve(el);
+          return;
+        }
         let current = 0;
         const step = Math.max(1, Math.ceil(target / 48));
         const tick = () => {
@@ -208,15 +232,27 @@
       if (navigator.share) await navigator.share({ title: project.title, text: project.description, url: location.href });
       else navigator.clipboard?.writeText(location.href);
     });
-    $("[data-floating-whatsapp]").addEventListener("click", () => window.open(whatsappUrl(), "_blank", "noopener"));
-    $("[data-testimonial-prev]").addEventListener("click", () => renderTestimonials((Number($("[data-testimonial]").dataset.index) - 1 + data.testimonials.length) % data.testimonials.length));
-    $("[data-testimonial-next]").addEventListener("click", () => renderTestimonials((Number($("[data-testimonial]").dataset.index) + 1) % data.testimonials.length));
+    $("[data-floating-whatsapp]").addEventListener("click", () => {
+      if (data.contact.whatsapp) window.open(whatsappUrl(), "_blank", "noopener");
+      else window.location.href = `mailto:${data.contact.email}`;
+    });
+    $("[data-testimonial-prev]").addEventListener("click", () => {
+      if (data.testimonials.length) renderTestimonials((Number($("[data-testimonial]").dataset.index) - 1 + data.testimonials.length) % data.testimonials.length);
+    });
+    $("[data-testimonial-next]").addEventListener("click", () => {
+      if (data.testimonials.length) renderTestimonials((Number($("[data-testimonial]").dataset.index) + 1) % data.testimonials.length);
+    });
     $("[data-contact-form]").addEventListener("submit", (event) => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       const message = `Name: ${form.get("name")}%0APhone: ${form.get("phone")}%0AService: ${form.get("service")}%0ABudget: ${form.get("budget")}%0AMessage: ${form.get("message")}`;
-      $("[data-form-status]").textContent = "Opening WhatsApp with your inquiry...";
-      window.open(whatsappUrl(message), "_blank", "noopener");
+      if (data.contact.whatsapp) {
+        $("[data-form-status]").textContent = "Opening WhatsApp with your inquiry...";
+        window.open(whatsappUrl(message), "_blank", "noopener");
+      } else {
+        $("[data-form-status]").textContent = "Opening email with your inquiry...";
+        window.location.href = `mailto:${data.contact.email}?subject=Design inquiry&body=${message}`;
+      }
     });
     document.addEventListener("contextmenu", (event) => {
       if (event.target.closest(".project-card, .project-viewer")) event.preventDefault();
