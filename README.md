@@ -25,6 +25,18 @@ Most visible content lives in `data.js`.
 
 Run `node preview-server.cjs` and open `http://127.0.0.1:4173`.
 
+## Deploy to Vercel
+
+Import the GitHub repository into Vercel as a static site.
+
+- Framework Preset: `Other`
+- Root Directory: `./`
+- Build Command: leave empty
+- Output Directory: leave empty
+- Install Command: leave empty
+
+After deployment, Vercel will give the site a live `.vercel.app` URL. With `vercel.json`, `admin.html` can also be opened as `/admin`.
+
 ## Admin
 
 Open `admin.html` to sign in with the configured admin email and password. The current login is a static front-end gate for the dashboard preview; production security should be handled by the future Next.js/backend phase.
