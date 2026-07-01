@@ -209,9 +209,15 @@
 
   function bindEvents() {
     $("[data-menu-toggle]").addEventListener("click", () => $("[data-nav]").classList.toggle("open"));
+    $("[data-nav]").addEventListener("click", (event) => {
+      if (event.target.closest("a")) $("[data-nav]").classList.remove("open");
+    });
     $("[data-categories]").addEventListener("click", (event) => {
       const card = event.target.closest("[data-category-id]");
-      if (card) renderGallery(card.dataset.categoryId);
+      if (card) {
+        $("[data-nav]").classList.remove("open");
+        renderGallery(card.dataset.categoryId);
+      }
     });
     $("[data-categories]").addEventListener("keydown", (event) => {
       if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-category-id]")) renderGallery(event.target.dataset.categoryId);
