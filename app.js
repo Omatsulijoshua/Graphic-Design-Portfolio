@@ -1,6 +1,6 @@
 (function () {
   const data = window.JGW_DATA;
-  const money = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
+  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   const whatsappText = "Hello JOSHGRAPHIX_WORLD,%0AI saw your portfolio and I'm interested in your services.";
   const whatsappUrl = (extra = "") => data.contact.whatsapp
     ? `https://wa.me/${data.contact.whatsapp}?text=${whatsappText}${extra ? "%0A" + encodeURIComponent(extra) : ""}`
