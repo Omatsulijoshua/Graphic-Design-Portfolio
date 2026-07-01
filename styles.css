@@ -50,12 +50,18 @@ button, input, select, textarea { font: inherit; }
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 3rem;
-  height: 3rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--purple), var(--gold));
+  background: #050308;
   box-shadow: 0 0 32px rgba(106, 13, 173, 0.55);
+  overflow: hidden;
   font-weight: 900;
+}
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .brand strong { display: block; letter-spacing: 0; }
 .brand small { color: var(--muted); font-size: 0.76rem; }
@@ -375,6 +381,10 @@ td { color: var(--muted); }
 }
 
 @media (max-width: 560px) {
+  .brand-mark {
+    width: 3.4rem;
+    height: 3.4rem;
+  }
   .brand small { display: none; }
   .hero { min-height: auto; padding-top: 4rem; }
   .hero-stats { grid-template-columns: 1fr 1fr; }
