@@ -51,7 +51,7 @@
     return cloned.sort((a, b) => b.popularity - a.popularity);
   }
 
-  let currentCategoryId = "logo";
+  let currentCategoryId = "breakmat";
 
   function filteredProjects(categoryId = currentCategoryId) {
     const term = $("#searchInput").value.trim().toLowerCase();
