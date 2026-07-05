@@ -1,6 +1,6 @@
 ﻿(function () {
   const ADMIN_EMAIL = "joshuagraph07@gmail.com";
-  const ADMIN_PASSWORD_HASH = "301edf90d2a0776cbf559ee7f50b9cdde56b51c1a2d173551cf0c07d329127a5";
+  const ADMIN_PASSWORD_HASH = "137a604c8ce7909d9ff2b1a41424fa52c4a9624f093dc12a6406d9a2cb077343";
   const SESSION_KEY = "jgw_admin_session";
   const data = window.JGW_DATA;
 
@@ -159,4 +159,5 @@
   if (sessionStorage.getItem(SESSION_KEY) === "active") showDashboard();
   else showLogin();
 })();
+
 
