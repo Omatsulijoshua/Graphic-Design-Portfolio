@@ -12,7 +12,7 @@
     <meta property="og:image" content="assets/hero-creative-studio.png">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="/">
-    <link rel="stylesheet" href="styles.css?v=20260705-3">
+    <link rel="stylesheet" href="styles.css?v=20260706-2">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -62,10 +62,10 @@
             <a class="button secondary" href="#contact">Contact Me</a>
           </div>
           <div class="hero-stats" aria-label="Company statistics">
-            <article><strong data-counter="0">0</strong><span>Projects Completed</span></article>
-            <article><strong data-counter="0">0</strong><span>Happy Clients</span></article>
-            <article><strong data-counter="0">0</strong><span>Years Experience</span></article>
-            <article><strong data-counter="0" data-suffix="%">0</strong><span>Client Satisfaction</span></article>
+            <article><strong data-counter="73">0</strong><span>Projects Completed</span></article>
+            <article><strong data-counter="71">0</strong><span>Happy Clients</span></article>
+            <article><strong data-counter="3">0</strong><span>Years Experience</span></article>
+            <article><strong data-counter="99" data-suffix="%">0</strong><span>Client Satisfaction</span></article>
           </div>
         </div>
       </section>
@@ -106,6 +106,7 @@
             <button class="icon-button" type="button" data-close-gallery aria-label="Close gallery">Ã—</button>
           </div>
           <div class="album-list" data-albums></div>
+          <div class="album-pricing" data-gallery-pricing></div>
           <div class="masonry" data-projects></div>
         </div>
       </section>
@@ -165,15 +166,14 @@
           <p class="eyebrow">Contact</p>
           <h2>Ready to bring your idea to life?</h2>
           <div class="contact-actions">
-            <a class="button primary" data-whatsapp href="#">WhatsApp</a>
-            <a class="button secondary" href="mailto:joshuagraph07@gmail.com">Email</a>
-            <a class="button ghost" href="#contact" aria-disabled="true">Call</a>
+            <a class="button primary" href="mailto:joshuagraph07@gmail.com">Email</a>
+            <a class="button secondary" href="sms:+17542255407">Text</a>
           </div>
           <form class="contact-form" data-contact-form>
             <label>Name<input name="name" required autocomplete="name"></label>
             <label>Phone<input name="phone" required autocomplete="tel"></label>
             <label>Email<input name="email" type="email" autocomplete="email"></label>
-            <label>Service Needed<select name="service" data-service-options></select></label>
+            <fieldset class="service-checks"><legend>Service Needed</legend><div data-service-options></div></fieldset>
             <label>Budget<input name="budget" placeholder="Example: $100"></label>
             <label>Message<textarea name="message" rows="4" required></textarea></label>
             <button class="button primary" type="submit">Send Inquiry</button>
@@ -205,6 +205,7 @@
             <div><dt>Client</dt><dd data-modal-client></dd></div>
             <div><dt>Services</dt><dd data-modal-services></dd></div>
           </dl>
+          <div class="reaction-row modal-reactions" data-modal-reactions></div>
           <div class="hero-actions">
             <button class="button secondary" type="button" data-fullscreen>Fullscreen</button>
             <button class="button ghost" type="button" data-share>Share</button>
@@ -220,10 +221,13 @@
       <a href="login.html">Admin Login</a>
     </footer>
 
-    <script src="data.js?v=20260705-3"></script>
-    <script src="app.js?v=20260705-3"></script>
+    <script src="data.js?v=20260706-2"></script>
+    <script src="app.js?v=20260706-2"></script>
   </body>
 </html>
+
+
+
 
 
 

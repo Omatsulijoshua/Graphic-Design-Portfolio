@@ -1,8 +1,8 @@
-window.JGW_DATA = {
+﻿window.JGW_DATA = {
   contact: {
     whatsapp: "",
     email: "joshuagraph07@gmail.com",
-    phone: "",
+    phone: "+1(754)225-5407",
     address: "",
     socials: []
   },
@@ -30,3 +30,4 @@ window.JGW_DATA = {
     ["Can I request urgent delivery?", "Yes. Urgent projects can be handled when the schedule allows, with a rush fee for priority turnaround."]
   ]
 };
+

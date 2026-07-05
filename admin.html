@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>JOSHGRAPHIX_WORLD Admin Dashboard</title>
     <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="styles.css?v=20260705-3">
+    <link rel="stylesheet" href="styles.css?v=20260706-2">
   </head>
   <body>
     <main class="admin-shell" data-admin-shell>
@@ -17,7 +17,9 @@
         <nav class="admin-nav">
           <a href="#overview">Overview</a>
           <a href="#categories">Categories</a>
+          <a href="#upload">Upload Images</a>
           <a href="#projects">Projects</a>
+          <a href="#reviews">Reviews</a>
           <a href="#messages">Messages</a>
           <button class="button ghost" type="button" data-logout>Logout</button>
           <a href="index.html">View Site</a>
@@ -26,7 +28,12 @@
       <section class="admin-main">
         <p class="eyebrow">Secure admin foundation</p>
         <h1 style="font-size:clamp(2.4rem,5vw,4.6rem)">JOSHGRAPHIX_WORLD Dashboard</h1>
-        <p class="hero-copy">Manage your portfolio structure, categories, projects, messages, and future uploads from this dashboard.</p>
+        <p class="hero-copy">Upload portfolio images and client satisfaction review screenshots from this dashboard.</p>
+
+        <div class="admin-quick-actions">
+          <a class="button primary" href="#upload">Upload Portfolio Image</a>
+          <a class="button secondary" href="#reviews">Upload Review Screenshot</a>
+        </div>
 
         <div class="admin-grid" id="overview">
           <article class="admin-card"><span>Total Visitors</span><strong>0</strong></article>
@@ -50,6 +57,27 @@
           </div>
         </section>
 
+
+        <section id="upload" class="admin-panel-section">
+          <div class="section-head">
+            <p class="eyebrow">Upload portfolio images here</p>
+            <h2>Paste a Google Drive image link or any direct image link, then save it to the portfolio.</h2>
+          </div>
+          <form class="admin-form" data-project-form>
+            <label>Project Title<input name="title" required placeholder="Example: Breakmat sample"></label>
+            <label>Category<select name="category" data-admin-category-options required></select></label>
+            <label>Image Link<input name="image" type="url" required placeholder="Paste Google Drive or image URL"></label>
+            <label>Price USD<input name="price" type="number" min="0" step="1" placeholder="25"></label>
+            <label>Delivery Time<input name="delivery" placeholder="1-2 days"></label>
+            <label>Client Name<input name="client" placeholder="Optional"></label>
+            <label class="full-span">Description<textarea name="description" rows="4" placeholder="Describe this design"></textarea></label>
+            <button class="button primary" type="submit">Save Image Project</button>
+            <p class="form-status" data-project-status role="status"></p>
+          </form>
+          <div class="admin-help">
+            <strong>Google Drive tip:</strong> set the image sharing to anyone with the link can view, then paste the share link here.
+          </div>
+        </section>
         <section id="projects" class="section" style="padding-left:0;padding-right:0">
           <div class="section-head">
             <p class="eyebrow">Project management</p>
@@ -63,6 +91,30 @@
           </div>
         </section>
 
+        
+        <section id="reviews" class="admin-panel-section">
+          <div class="section-head">
+            <p class="eyebrow">Reviews and satisfaction</p>
+            <h2>Upload client review images or client satisfaction screenshots using an image link.</h2>
+          </div>
+          <form class="admin-form" data-review-form>
+            <label>Client Name<input name="name" required placeholder="Client name"></label>
+            <label>Rating<select name="rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label>
+            <label class="full-span">Client Satisfaction Image Link<input name="photo" type="url" placeholder="Paste Google Drive or image URL"></label>
+            <label class="full-span">Review Text<textarea name="review" rows="4" placeholder="Paste or type the client review"></textarea></label>
+            <button class="button primary" type="submit">Save Review</button>
+            <p class="form-status" data-review-status role="status"></p>
+          </form>
+          <div class="admin-help">
+            <strong>Where to upload client satisfaction images:</strong> paste the review screenshot link in the Review Image Link field above. Google Drive links should be shared as anyone with the link can view.
+          </div>
+          <div class="table-wrap review-table-wrap">
+            <table>
+              <thead><tr><th>Review</th><th>Rating</th><th>Image</th><th>Action</th></tr></thead>
+              <tbody data-admin-reviews></tbody>
+            </table>
+          </div>
+        </section>
         <section id="messages">
           <div class="section-head">
             <p class="eyebrow">Messages</p>
@@ -76,7 +128,10 @@
         </section>
       </section>
     </main>
-    <script src="data.js?v=20260705-3"></script>
-    <script src="admin.js?v=20260705-3"></script>
+    <script src="data.js?v=20260706-2"></script>
+    <script src="admin.js?v=20260706-2"></script>
   </body>
 </html>
+
+
+

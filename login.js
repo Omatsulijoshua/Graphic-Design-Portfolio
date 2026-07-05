@@ -1,7 +1,6 @@
 ﻿(function () {
-  const ADMIN_EMAIL = "joshuagraph07@gmail.com";
-  const ADMIN_PASSWORD_HASH = "137a604c8ce7909d9ff2b1a41424fa52c4a9624f093dc12a6406d9a2cb077343";
   const SESSION_KEY = "jgw_admin_session";
+  const LOGIN_KEY = "jgw_admin_login";
 
   const $ = (selector) => document.querySelector(selector);
 
@@ -99,6 +98,24 @@
     }).join("");
   }
 
+  function readLogin() {
+    try {
+      return JSON.parse(localStorage.getItem(LOGIN_KEY) || "null");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveLogin(login) {
+    localStorage.setItem(LOGIN_KEY, JSON.stringify(login));
+  }
+
+  const login = readLogin();
+  const intro = $("[data-login-copy]");
+  if (intro && !login) {
+    intro.textContent = "First time here? Enter the email and password you want to use on this browser, then log in.";
+  }
+
   $("[data-login-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
     const formElement = event.currentTarget;
@@ -106,9 +123,25 @@
     const email = String(form.get("email")).trim().toLowerCase();
     const password = String(form.get("password")).trim();
     const status = $("[data-login-status]");
-    status.textContent = "Checking login...";
 
-    if (email === ADMIN_EMAIL && await sha256(password) === ADMIN_PASSWORD_HASH) {
+    if (!email || !password) {
+      status.textContent = "Enter an email and password.";
+      return;
+    }
+
+    const passwordHash = await sha256(password);
+    const savedLogin = readLogin();
+
+    if (!savedLogin) {
+      saveLogin({ email, passwordHash });
+      sessionStorage.setItem(SESSION_KEY, "active");
+      status.textContent = "Admin login created. Opening dashboard...";
+      formElement.reset();
+      window.location.href = "admin.html";
+      return;
+    }
+
+    if (email === savedLogin.email && passwordHash === savedLogin.passwordHash) {
       sessionStorage.setItem(SESSION_KEY, "active");
       status.textContent = "Login successful. Opening dashboard...";
       formElement.reset();
@@ -116,6 +149,6 @@
       return;
     }
 
-    status.textContent = "Invalid admin email or password.";
+    status.textContent = "Invalid admin email or password for this browser.";
   });
 })();
