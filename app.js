@@ -297,9 +297,19 @@
   }
 
   function bindEvents() {
-    $("[data-menu-toggle]").addEventListener("click", () => $("[data-nav]").classList.toggle("open"));
+    $("[data-menu-toggle]").addEventListener("click", (event) => {
+      event.stopPropagation();
+      $("[data-nav]").classList.toggle("open");
+    });
     $("[data-nav]").addEventListener("click", (event) => {
+      event.stopPropagation();
       if (event.target.closest("a")) $("[data-nav]").classList.remove("open");
+    });
+    document.addEventListener("click", (event) => {
+      const nav = $("[data-nav]");
+      if (!nav.classList.contains("open")) return;
+      if (event.target.closest("[data-nav], [data-menu-toggle]")) return;
+      nav.classList.remove("open");
     });
     $("[data-categories]").addEventListener("click", (event) => {
       const card = event.target.closest("[data-category-id]");
