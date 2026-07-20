@@ -17,10 +17,16 @@
     if (!value) return "";
     const driveMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
     if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
+    if (/imgur\.com\/(?:a|gallery)\//i.test(value)) return "";
+    const imgurPageMatch = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
+    if (imgurPageMatch) return `https://i.imgur.com/${imgurPageMatch[1]}.jpg`;
     return value;
   }
 
   function safeUrl(url) {
+    if (/imgur\.com\/(?:a|gallery)\//i.test(String(url || ""))) {
+      throw new Error("Imgur album links cannot display here. Open the image, copy the direct image link, and paste a link like https://i.imgur.com/name.jpg.");
+    }
     const value = normalizeImageUrl(url);
     return /^https?:\/\//i.test(value) ? value : "";
   }
@@ -32,7 +38,7 @@
   function readProjects() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map((project) => ({ ...project, image: normalizeImageUrl(project.image) })) : [];
     } catch (error) {
       return [];
     }

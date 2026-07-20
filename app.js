@@ -19,6 +19,9 @@
     if (!value) return "";
     const driveMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
     if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
+    if (/imgur\.com\/(?:a|gallery)\//i.test(value)) return "";
+    const imgurPageMatch = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
+    if (imgurPageMatch) return `https://i.imgur.com/${imgurPageMatch[1]}.jpg`;
     return value;
   }
 

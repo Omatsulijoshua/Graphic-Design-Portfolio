@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>JOSHGRAPHIX_WORLD Admin Dashboard</title>
     <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="styles.css?v=20260706-2">
+    <link rel="stylesheet" href="styles.css?v=20260720-1">
   </head>
   <body>
     <main class="admin-shell" data-admin-shell>
@@ -61,12 +61,12 @@
         <section id="upload" class="admin-panel-section">
           <div class="section-head">
             <p class="eyebrow">Upload portfolio images here</p>
-            <h2>Paste a Google Drive image link or any direct image link, then save it to the portfolio.</h2>
+            <h2>Paste a Google Drive image link or a direct image file link, then save it to the portfolio.</h2>
           </div>
           <form class="admin-form" data-project-form>
             <label>Project Title<input name="title" required placeholder="Example: Breakmat sample"></label>
             <label>Category<select name="category" data-admin-category-options required></select></label>
-            <label>Image Link<input name="image" type="url" required placeholder="Paste Google Drive or image URL"></label>
+            <label>Image Link<input name="image" type="url" required placeholder="Google Drive or direct image URL"></label>
             <label>Price USD<input name="price" type="number" min="0" step="1" placeholder="25"></label>
             <label>Delivery Time<input name="delivery" placeholder="1-2 days"></label>
             <label>Client Name<input name="client" placeholder="Optional"></label>
@@ -75,7 +75,7 @@
             <p class="form-status" data-project-status role="status"></p>
           </form>
           <div class="admin-help">
-            <strong>Google Drive tip:</strong> set the image sharing to anyone with the link can view, then paste the share link here.
+            <strong>Image link tip:</strong> Google Drive links must be shared as anyone with the link can view. Imgur album links like imgur.com/a/... will not display; use a direct image link like i.imgur.com/name.jpg.
           </div>
         </section>
         <section id="projects" class="section" style="padding-left:0;padding-right:0">
@@ -95,18 +95,18 @@
         <section id="reviews" class="admin-panel-section">
           <div class="section-head">
             <p class="eyebrow">Reviews and satisfaction</p>
-            <h2>Upload client review images or client satisfaction screenshots using an image link.</h2>
+            <h2>Upload client review images or client satisfaction screenshots using a direct image link.</h2>
           </div>
           <form class="admin-form" data-review-form>
             <label>Client Name<input name="name" required placeholder="Client name"></label>
             <label>Rating<select name="rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label>
-            <label class="full-span">Client Satisfaction Image Link<input name="photo" type="url" placeholder="Paste Google Drive or image URL"></label>
+            <label class="full-span">Client Satisfaction Image Link<input name="photo" type="url" placeholder="Google Drive or direct image URL"></label>
             <label class="full-span">Review Text<textarea name="review" rows="4" placeholder="Paste or type the client review"></textarea></label>
             <button class="button primary" type="submit">Save Review</button>
             <p class="form-status" data-review-status role="status"></p>
           </form>
           <div class="admin-help">
-            <strong>Where to upload client satisfaction images:</strong> paste the review screenshot link in the Review Image Link field above. Google Drive links should be shared as anyone with the link can view.
+            <strong>Where to upload client satisfaction images:</strong> paste the review screenshot link in the field above. Google Drive links should be shared as anyone with the link can view. Imgur album links are pages, not images.
           </div>
           <div class="table-wrap review-table-wrap">
             <table>
@@ -128,8 +128,8 @@
         </section>
       </section>
     </main>
-    <script src="data.js?v=20260706-2"></script>
-    <script src="admin.js?v=20260706-2"></script>
+    <script src="data.js?v=20260720-1"></script>
+    <script src="admin.js?v=20260720-1"></script>
   </body>
 </html>
 
