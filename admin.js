@@ -17,15 +17,29 @@
     if (!value) return "";
     const driveMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
     if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
-    if (/imgur\.com\/(?:a|gallery)\//i.test(value)) return "";
     const imgurPageMatch = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
     if (imgurPageMatch) return `https://i.imgur.com/${imgurPageMatch[1]}.jpg`;
     return value;
   }
 
+  function imgurEmbedUrl(url) {
+    const value = String(url || "").trim();
+    const match = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/(a|gallery)\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
+    return match ? `https://imgur.com/${match[1]}/${match[2]}/embed?pub=true` : "";
+  }
+
+  function mediaTypeForUrl(url) {
+    return imgurEmbedUrl(url) || /\/embed\?pub=true/i.test(String(url || "")) ? "embed" : "image";
+  }
+
   function safeUrl(url) {
-    if (/imgur\.com\/(?:a|gallery)\//i.test(String(url || ""))) {
-      throw new Error("Imgur album links cannot display here. Open the image, copy the direct image link, and paste a link like https://i.imgur.com/name.jpg.");
+    const value = imgurEmbedUrl(url) || normalizeImageUrl(url);
+    return /^https?:\/\//i.test(value) ? value : "";
+  }
+
+  function safeDirectImageUrl(url) {
+    if (imgurEmbedUrl(url)) {
+      throw new Error("For review screenshots, use a direct image link instead of an Imgur album link.");
     }
     const value = normalizeImageUrl(url);
     return /^https?:\/\//i.test(value) ? value : "";
@@ -38,7 +52,11 @@
   function readProjects() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed.map((project) => ({ ...project, image: normalizeImageUrl(project.image) })) : [];
+      return Array.isArray(parsed) ? parsed.map((project) => {
+        const embed = imgurEmbedUrl(project.image);
+        const image = embed || normalizeImageUrl(project.image);
+        return { ...project, image, mediaType: project.mediaType || mediaTypeForUrl(image) };
+      }) : [];
     } catch (error) {
       return [];
     }
@@ -102,7 +120,7 @@
     $("[data-admin-projects]").innerHTML = storedProjects.length ? storedProjects.map((project) => {
       const category = data.categories.find((item) => item.id === project.category);
       return `<tr>
-        <td>${project.image ? `<img class="admin-thumb" src="${escapeHtml(project.image)}" alt="">` : ""}${escapeHtml(project.title)}</td>
+        <td>${project.image && project.mediaType !== "embed" ? `<img class="admin-thumb" src="${escapeHtml(project.image)}" alt="">` : ""}${project.mediaType === "embed" ? `<span class="admin-thumb admin-embed-thumb">Album</span>` : ""}${escapeHtml(project.title)}</td>
         <td>${escapeHtml(category?.name || "Unassigned")}</td>
         <td>${money.format(Number(project.price || 0))}</td>
         <td>${escapeHtml(project.delivery || "Pending")}</td>
@@ -115,6 +133,7 @@
   function addProject(form) {
     const image = safeUrl(form.get("image"));
     if (!image) throw new Error("Please paste a valid Google Drive or image link that starts with http or https.");
+    const mediaType = mediaTypeForUrl(image);
 
     const category = String(form.get("category") || "breakmat");
     const categoryData = data.categories.find((item) => item.id === category) || data.categories[0];
@@ -134,7 +153,8 @@
       popularity: 1,
       date: now.toISOString().slice(0, 10),
       height: "360px",
-      image
+      image,
+      mediaType
     };
 
     const projects = readProjects();
@@ -143,7 +163,7 @@
   }
 
   function addReview(form) {
-    const photo = safeUrl(form.get("photo"));
+    const photo = safeDirectImageUrl(form.get("photo"));
     const reviewText = String(form.get("review") || "").trim();
     if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
     const review = {

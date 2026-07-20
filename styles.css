@@ -422,6 +422,18 @@ td { color: var(--muted); }
   min-height: var(--height);
   object-fit: cover;
 }
+.embed-art iframe,
+.project-viewer iframe {
+  width: 100%;
+  height: 100%;
+  min-height: var(--height);
+  border: 0;
+  background: #050308;
+}
+.project-viewer iframe {
+  min-height: 540px;
+  padding: 1rem;
+}
 .admin-panel-section {
   margin: 2rem 0;
 }
@@ -459,6 +471,14 @@ td { color: var(--muted); }
   display: inline-block;
   vertical-align: middle;
   margin-right: 0.65rem;
+}
+.admin-embed-thumb {
+  display: inline-grid;
+  place-items: center;
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(217, 164, 65, 0.12);
 }
 .admin-delete {
   min-height: 2.4rem;

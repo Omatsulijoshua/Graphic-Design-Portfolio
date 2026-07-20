@@ -19,10 +19,23 @@
     if (!value) return "";
     const driveMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
     if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
-    if (/imgur\.com\/(?:a|gallery)\//i.test(value)) return "";
     const imgurPageMatch = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
     if (imgurPageMatch) return `https://i.imgur.com/${imgurPageMatch[1]}.jpg`;
     return value;
+  }
+
+  function imgurEmbedUrl(url) {
+    const value = String(url || "").trim();
+    const match = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/(a|gallery)\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);
+    return match ? `https://imgur.com/${match[1]}/${match[2]}/embed?pub=true` : "";
+  }
+
+  function projectMedia(project) {
+    const embed = imgurEmbedUrl(project.image);
+    if (project.mediaType === "embed" || embed || /\/embed\?pub=true/i.test(project.image || "")) {
+      return { type: "embed", url: embed || project.image };
+    }
+    return { type: "image", url: normalizeImageUrl(project.image) };
   }
 
   function readStoredReviews() {
@@ -68,7 +81,8 @@
       if (!Array.isArray(parsed)) return [];
       return parsed.map((project) => ({
         ...project,
-        image: normalizeImageUrl(project.image),
+        image: projectMedia(project).url,
+        mediaType: projectMedia(project).type,
         price: Number(project.price || 0),
         services: Array.isArray(project.services) ? project.services : [project.service || "Design"]
       }));
@@ -159,13 +173,17 @@
     $("[data-projects]").innerHTML = projects.map((project) => {
       const title = escapeHtml(project.title);
       const album = escapeHtml(project.album || "Portfolio");
-      const image = normalizeImageUrl(project.image);
+      const media = projectMedia(project);
       const initials = title.split(" ").map((part) => part[0]).join("").slice(0, 3);
       return `
         <article class="project-card" data-project-id="${escapeHtml(project.id)}">
-          ${image ? `
+          ${media.type === "embed" && media.url ? `
+            <div class="project-art image-art embed-art" style="--height:${project.height || "360px"}">
+              <iframe src="${escapeHtml(media.url)}" title="${title}" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            </div>
+          ` : media.url ? `
             <div class="project-art image-art" style="--height:${project.height || "360px"}">
-              <img src="${escapeHtml(image)}" alt="${title}" loading="lazy">
+              <img src="${escapeHtml(media.url)}" alt="${title}" loading="lazy">
             </div>
           ` : `
             <div class="project-art" style="--art:${project.art || "linear-gradient(135deg,#6a0dad,#d9a441)"};--height:${project.height || "360px"}">
@@ -189,7 +207,7 @@
 
   function projectImage(project) {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1400' height='1000'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#6a0dad'/><stop offset='.55' stop-color='#2a0648'/><stop offset='1' stop-color='#d9a441'/></linearGradient></defs><rect width='1400' height='1000' fill='url(#g)'/><circle cx='1080' cy='210' r='190' fill='rgba(255,255,255,.14)'/><rect x='150' y='210' width='760' height='470' rx='18' fill='rgba(255,255,255,.12)' stroke='rgba(255,255,255,.35)'/><text x='190' y='430' fill='white' font-family='Arial' font-size='72' font-weight='800'>${project.title}</text><text x='190' y='535' fill='#d9a441' font-family='Arial' font-size='38'>JOSHGRAPHIX_WORLD</text></svg>`;
-    return normalizeImageUrl(project.image) || `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    return projectMedia(project).url || `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   }
 
   function openProject(projectId) {
@@ -205,8 +223,20 @@
     const project = activeProjectSet[activeProjectIndex];
     if (!project) return;
     const category = data.categories.find((item) => item.id === project.category);
-    $("[data-modal-image]").src = projectImage(project);
-    $("[data-modal-image]").alt = project.title;
+    const media = projectMedia(project);
+    const modalImage = $("[data-modal-image]");
+    const modalEmbed = $("[data-modal-embed]");
+    modalImage.hidden = media.type === "embed";
+    modalEmbed.hidden = media.type !== "embed";
+    if (media.type === "embed") {
+      modalEmbed.src = media.url;
+      modalEmbed.title = project.title;
+      modalImage.removeAttribute("src");
+    } else {
+      modalEmbed.removeAttribute("src");
+      modalImage.src = projectImage(project);
+      modalImage.alt = project.title;
+    }
     $("[data-modal-category]").textContent = `${category.name} Â· ${project.album}`;
     $("[data-modal-title]").textContent = project.title;
     $("[data-modal-description]").textContent = project.description;
@@ -348,7 +378,10 @@
     $$("[data-close-modal]").forEach((node) => node.addEventListener("click", closeModal));
     $("[data-slide-prev]").addEventListener("click", () => { activeProjectIndex = (activeProjectIndex - 1 + activeProjectSet.length) % activeProjectSet.length; updateModal(); });
     $("[data-slide-next]").addEventListener("click", () => { activeProjectIndex = (activeProjectIndex + 1) % activeProjectSet.length; updateModal(); });
-    $("[data-fullscreen]").addEventListener("click", () => $("[data-modal-image]").requestFullscreen?.());
+    $("[data-fullscreen]").addEventListener("click", () => {
+      const target = $("[data-modal-embed]").hidden ? $("[data-modal-image]") : $("[data-modal-embed]");
+      target.requestFullscreen?.();
+    });
     $("[data-share]").addEventListener("click", async () => {
       const project = activeProjectSet[activeProjectIndex];
       if (navigator.share) await navigator.share({ title: project.title, text: project.description, url: location.href });
