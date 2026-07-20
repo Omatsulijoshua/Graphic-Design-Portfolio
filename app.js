@@ -139,13 +139,14 @@
   }
 
   let currentCategoryId = "breakmat";
+  let currentAlbum = "";
 
   function filteredProjects(categoryId = currentCategoryId) {
     const term = $("#searchInput").value.trim().toLowerCase();
     return sortProjects(data.projects.filter((project) => {
       const category = data.categories.find((item) => item.id === project.category);
       const haystack = [project.title, project.description, project.album, project.client, project.services.join(" "), category?.name, project.price].join(" ").toLowerCase();
-      return (!categoryId || project.category === categoryId) && (!term || haystack.includes(term));
+      return (!categoryId || project.category === categoryId) && (!currentAlbum || project.album === currentAlbum) && (!term || haystack.includes(term));
     }));
   }
 
@@ -158,15 +159,29 @@
     panel.hidden = false;
     $("[data-gallery-title]").textContent = selected.name;
     $("[data-gallery-summary]").textContent = selected.description;
-    $("[data-gallery-kicker]").textContent = `${categoryProjectCount(selected.id)} live samples shown`;
-    $("[data-albums]").innerHTML = selected.albums.length ? selected.albums.map((album) => `
-      <article class="album-chip">
-        <strong>${album.title}</strong>
-        <p>${album.description}</p>
-        <p>${album.date} Â· ${album.type}</p>
-      </article>
-    `).join("") : `<article class="album-chip"><strong>No albums yet</strong><p>Add real albums from the future admin dashboard.</p></article>`;
-    const categoryPrices = projects.map((project) => Number(project.price || 0)).filter((price) => price > 0);
+    $("[data-gallery-kicker]").textContent = currentAlbum ? `${projects.length} samples in ${currentAlbum}` : `${categoryProjectCount(selected.id)} live samples shown`;
+    const categoryProjects = data.projects.filter((project) => project.category === selected.id);
+    const storedAlbums = [...new Set(categoryProjects.map((project) => project.album).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const configuredAlbums = selected.albums.map((album) => album.title);
+    const albumTitles = [...new Set([...configuredAlbums, ...storedAlbums])];
+    $("[data-albums]").innerHTML = albumTitles.length ? `
+      <button class="album-chip ${currentAlbum ? "" : "active"}" type="button" data-album-filter="">
+        <strong>All ${selected.name}</strong>
+        <p>${categoryProjects.length} projects</p>
+      </button>
+      ${albumTitles.map((albumTitle) => {
+        const albumData = selected.albums.find((album) => album.title === albumTitle);
+        const count = categoryProjects.filter((project) => project.album === albumTitle).length;
+        return `
+          <button class="album-chip ${currentAlbum === albumTitle ? "active" : ""}" type="button" data-album-filter="${escapeHtml(albumTitle)}">
+            <strong>${escapeHtml(albumTitle)}</strong>
+            <p>${albumData ? escapeHtml(albumData.description) : `${count} project${count === 1 ? "" : "s"}`}</p>
+            <p>${albumData ? `${escapeHtml(albumData.date)} / ${escapeHtml(albumData.type)}` : "Uploaded from admin"}</p>
+          </button>
+        `;
+      }).join("")}
+    ` : `<article class="album-chip"><strong>No albums yet</strong><p>Add album names when uploading images from the admin dashboard.</p></article>`;
+    const categoryPrices = categoryProjects.map((project) => Number(project.price || 0)).filter((price) => price > 0);
     $("[data-gallery-pricing]").innerHTML = categoryPrices.length
       ? `<strong>Pricing</strong><span>Starting from ${money.format(Math.min(...categoryPrices))}</span>`
       : `<strong>Pricing</strong><span>Add pricing when uploading image projects from admin.</span>`;
@@ -348,15 +363,25 @@
       const card = event.target.closest("[data-category-id]");
       if (card) {
         $("[data-nav]").classList.remove("open");
+        currentAlbum = "";
         renderGallery(card.dataset.categoryId);
       }
     });
     $("[data-categories]").addEventListener("keydown", (event) => {
-      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-category-id]")) renderGallery(event.target.dataset.categoryId);
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-category-id]")) {
+        currentAlbum = "";
+        renderGallery(event.target.dataset.categoryId);
+      }
     });
     $("#searchInput").addEventListener("input", () => renderGallery(currentCategoryId));
     $("#sortSelect").addEventListener("change", () => renderGallery(currentCategoryId));
     $("[data-close-gallery]").addEventListener("click", () => { $("[data-gallery-panel]").hidden = true; });
+    $("[data-albums]").addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-album-filter]");
+      if (!chip) return;
+      currentAlbum = chip.dataset.albumFilter;
+      renderGallery(currentCategoryId);
+    });
     $("[data-projects]").addEventListener("click", (event) => {
       if (event.target.closest("[data-reaction]")) return;
       const card = event.target.closest("[data-project-id]");

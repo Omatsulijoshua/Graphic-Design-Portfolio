@@ -585,3 +585,179 @@ td { color: var(--muted); }
 .admin-quick-actions .button {
   min-width: min(100%, 240px);
 }
+
+.album-chip {
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.album-chip.active {
+  border-color: rgba(217, 164, 65, 0.72);
+  background: rgba(217, 164, 65, 0.12);
+}
+.admin-section-head h2 {
+  font-size: clamp(1.75rem, 3.5vw, 3.1rem);
+}
+.admin-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+.admin-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.admin-form-actions .button {
+  flex: 1 1 180px;
+}
+.admin-live-preview,
+.admin-project-card {
+  background: linear-gradient(145deg, var(--panel), rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.admin-live-preview {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+}
+.admin-live-preview > span,
+.admin-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 0.75rem;
+  padding: 0.35rem 0.55rem;
+  color: var(--gold);
+  background: rgba(217, 164, 65, 0.12);
+  border: 1px solid rgba(217, 164, 65, 0.28);
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.admin-live-preview [data-preview-media],
+.admin-project-media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #050308;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.admin-live-preview img,
+.admin-live-preview iframe,
+.admin-project-media img,
+.admin-project-media iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+  background: #050308;
+}
+.admin-live-preview strong {
+  display: block;
+  margin-top: 1rem;
+  font-size: 1.25rem;
+}
+.admin-live-preview p,
+.admin-project-body p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.admin-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+.admin-manager-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(170px, 220px) minmax(170px, 220px);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.admin-album-strip {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+}
+.admin-album-strip button,
+.admin-album-strip span {
+  min-width: 190px;
+  padding: 0.8rem;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.admin-album-strip strong {
+  display: block;
+  color: var(--gold);
+}
+.admin-album-strip button span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+.admin-project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.admin-project-body {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+.admin-project-body h3 {
+  font-size: 1.25rem;
+}
+.admin-project-body dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+.admin-project-body dd {
+  color: var(--text);
+  font-weight: 800;
+}
+.admin-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.admin-card-actions .button {
+  flex: 1 1 120px;
+}
+.admin-empty {
+  padding: 1rem;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 860px) {
+  .admin-editor-grid,
+  .admin-manager-bar {
+    grid-template-columns: 1fr;
+  }
+  .admin-live-preview {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-project-body dl {
+    grid-template-columns: 1fr;
+  }
+}

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>JOSHGRAPHIX_WORLD Admin Dashboard</title>
     <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="styles.css?v=20260720-2">
+    <link rel="stylesheet" href="styles.css?v=20260720-3">
   </head>
   <body>
     <main class="admin-shell" data-admin-shell>
@@ -26,28 +26,27 @@
         </nav>
       </aside>
       <section class="admin-main">
-        <p class="eyebrow">Secure admin foundation</p>
+        <p class="eyebrow">Portfolio control room</p>
         <h1 style="font-size:clamp(2.4rem,5vw,4.6rem)">JOSHGRAPHIX_WORLD Dashboard</h1>
-        <p class="hero-copy">Upload portfolio images and client satisfaction review screenshots from this dashboard.</p>
+        <p class="hero-copy">Upload, preview, organize, edit, and delete portfolio images and review screenshots from this dashboard.</p>
 
         <div class="admin-quick-actions">
-          <a class="button primary" href="#upload">Upload Portfolio Image</a>
+          <a class="button primary" href="#upload">Add New Portfolio Image</a>
           <a class="button secondary" href="#reviews">Upload Review Screenshot</a>
+          <a class="button ghost" href="#projects">Organize Albums</a>
         </div>
 
         <div class="admin-grid" id="overview">
-          <article class="admin-card"><span>Total Visitors</span><strong>0</strong></article>
           <article class="admin-card"><span>Projects</span><strong data-admin-project-count>0</strong></article>
           <article class="admin-card"><span>Albums</span><strong data-admin-album-count>0</strong></article>
-          <article class="admin-card"><span>Messages</span><strong>0</strong></article>
-          <article class="admin-card"><span>Contact Clicks</span><strong>0</strong></article>
-          <article class="admin-card"><span>Storage Usage</span><strong>0%</strong></article>
+          <article class="admin-card"><span>Reviews</span><strong data-admin-review-count>0</strong></article>
+          <article class="admin-card"><span>Storage Usage</span><strong data-admin-storage>0%</strong></article>
         </div>
 
         <section id="categories">
-          <div class="section-head">
+          <div class="section-head admin-section-head">
             <p class="eyebrow">Category management</p>
-            <h2>Create, edit, hide, reorder, and update cover images.</h2>
+            <h2>See each section and the albums currently posted inside it.</h2>
           </div>
           <div class="table-wrap">
             <table>
@@ -58,42 +57,61 @@
         </section>
 
 
-        <section id="upload" class="admin-panel-section">
-          <div class="section-head">
-            <p class="eyebrow">Upload portfolio images here</p>
-            <h2>Paste a Google Drive image link, direct image file link, or Imgur album link, then save it to the portfolio.</h2>
+        <section id="upload" class="admin-panel-section admin-editor-panel">
+          <div class="section-head admin-section-head">
+            <p class="eyebrow" data-project-form-mode>Add portfolio image</p>
+            <h2>Paste an image link, choose a section, name the album, set the price, and preview it before saving.</h2>
           </div>
-          <form class="admin-form" data-project-form>
-            <label>Project Title<input name="title" required placeholder="Example: Breakmat sample"></label>
-            <label>Category<select name="category" data-admin-category-options required></select></label>
-            <label>Image Link<input name="image" type="url" required placeholder="Google Drive, direct image, or Imgur album URL"></label>
-            <label>Price USD<input name="price" type="number" min="0" step="1" placeholder="25"></label>
-            <label>Delivery Time<input name="delivery" placeholder="1-2 days"></label>
-            <label>Client Name<input name="client" placeholder="Optional"></label>
-            <label class="full-span">Description<textarea name="description" rows="4" placeholder="Describe this design"></textarea></label>
-            <button class="button primary" type="submit">Save Image Project</button>
-            <p class="form-status" data-project-status role="status"></p>
-          </form>
+          <div class="admin-editor-grid">
+            <form class="admin-form" data-project-form>
+              <input type="hidden" name="id" data-project-id>
+              <label>Project Title<input name="title" required placeholder="Example: Cat pics"></label>
+              <label>Section<select name="category" data-admin-category-options required></select></label>
+              <label class="full-span">Album Name<input name="album" list="albumSuggestions" required placeholder="Example: July Breakmat Album"></label>
+              <datalist id="albumSuggestions" data-album-suggestions></datalist>
+              <label class="full-span">Image Link<input name="image" type="url" required placeholder="Google Drive, direct image, or Imgur album URL"></label>
+              <label>Price USD<input name="price" type="number" min="0" step="1" placeholder="30"></label>
+              <label>Delivery Time<input name="delivery" placeholder="2 days"></label>
+              <label>Client Name<input name="client" placeholder="Optional"></label>
+              <label>Display Order<input name="order" type="number" min="1" step="1" placeholder="1"></label>
+              <label class="full-span">Description<textarea name="description" rows="4" placeholder="Describe this design"></textarea></label>
+              <div class="admin-form-actions">
+                <button class="button primary" type="submit" data-project-save>Save Image Project</button>
+                <button class="button ghost" type="button" data-cancel-edit hidden>Cancel Edit</button>
+              </div>
+              <p class="form-status" data-project-status role="status"></p>
+            </form>
+            <aside class="admin-live-preview" data-admin-preview>
+              <span>Live Preview</span>
+              <div data-preview-media></div>
+              <strong data-preview-title>Project title</strong>
+              <p data-preview-meta>Section, album, and price will appear here.</p>
+            </aside>
+          </div>
           <div class="admin-help">
             <strong>Image link tip:</strong> Google Drive links must be shared as anyone with the link can view. Imgur album links like imgur.com/a/... will display as embedded album previews.
           </div>
         </section>
-        <section id="projects" class="section" style="padding-left:0;padding-right:0">
-          <div class="section-head">
+        <section id="projects" class="section admin-panel-section" style="padding-left:0;padding-right:0">
+          <div class="section-head admin-section-head">
             <p class="eyebrow">Project management</p>
-            <h2>Upload images, assign albums, set price, SEO details, and tags.</h2>
+            <h2>See what is posted, filter by section or album, then edit names, prices, albums, and descriptions.</h2>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Project</th><th>Category</th><th>Price</th><th>Delivery</th><th>SEO</th></tr></thead>
-              <tbody data-admin-projects></tbody>
-            </table>
+          <div class="admin-manager-bar">
+            <input data-project-search placeholder="Search title, album, client, price">
+            <select data-project-filter-category></select>
+            <select data-project-filter-album></select>
+          </div>
+          <div class="admin-album-strip" data-admin-albums></div>
+          <div class="admin-project-grid" data-admin-projects></div>
+          <div class="admin-empty" data-admin-empty hidden>
+            No projects match this view yet. Add an image above and it will appear here.
           </div>
         </section>
 
         
         <section id="reviews" class="admin-panel-section">
-          <div class="section-head">
+          <div class="section-head admin-section-head">
             <p class="eyebrow">Reviews and satisfaction</p>
             <h2>Upload client review images or client satisfaction screenshots using a direct image link.</h2>
           </div>
@@ -115,21 +133,10 @@
             </table>
           </div>
         </section>
-        <section id="messages">
-          <div class="section-head">
-            <p class="eyebrow">Messages</p>
-            <h2>Unread, read, archived, reply status, search, and export are planned here.</h2>
-          </div>
-          <div class="admin-grid">
-            <article class="admin-card"><span>Unread</span><strong>0</strong></article>
-            <article class="admin-card"><span>Read</span><strong>0</strong></article>
-            <article class="admin-card"><span>Archived</span><strong>0</strong></article>
-          </div>
-        </section>
       </section>
     </main>
-    <script src="data.js?v=20260720-2"></script>
-    <script src="admin.js?v=20260720-2"></script>
+    <script src="data.js?v=20260720-3"></script>
+    <script src="admin.js?v=20260720-3"></script>
   </body>
 </html>
 

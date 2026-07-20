@@ -5,7 +5,8 @@
   const data = window.JGW_DATA;
   const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-  const $ = (selector) => document.querySelector(selector);
+  const $ = (selector, scope = document) => scope.querySelector(selector);
+  const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
   if (sessionStorage.getItem(SESSION_KEY) !== "active") {
     window.location.replace("login.html");
@@ -49,21 +50,44 @@
     return String(value ?? "").replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[char]);
   }
 
+  function categoryName(categoryId) {
+    return data.categories.find((category) => category.id === categoryId)?.name || "Unassigned";
+  }
+
+  function normalizeProject(project, index = 0) {
+    const embed = imgurEmbedUrl(project.image);
+    const image = embed || normalizeImageUrl(project.image);
+    const category = project.category || data.categories[0]?.id || "breakmat";
+    return {
+      id: project.id || `admin-${Date.now()}-${index}`,
+      category,
+      album: String(project.album || `${categoryName(category)} Uploads`).trim(),
+      title: String(project.title || "Untitled project").trim(),
+      description: String(project.description || "").trim(),
+      price: Number(project.price || 0),
+      delivery: String(project.delivery || "Pending").trim(),
+      client: String(project.client || "").trim(),
+      services: Array.isArray(project.services) ? project.services : [categoryName(category)],
+      popularity: Number(project.popularity || 1),
+      date: project.date || new Date().toISOString().slice(0, 10),
+      order: Number(project.order || index + 1),
+      height: project.height || "360px",
+      image,
+      mediaType: project.mediaType || mediaTypeForUrl(image)
+    };
+  }
+
   function readProjects() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed.map((project) => {
-        const embed = imgurEmbedUrl(project.image);
-        const image = embed || normalizeImageUrl(project.image);
-        return { ...project, image, mediaType: project.mediaType || mediaTypeForUrl(image) };
-      }) : [];
+      return Array.isArray(parsed) ? parsed.map(normalizeProject) : [];
     } catch (error) {
       return [];
     }
   }
 
   function saveProjects(projects) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects.map(normalizeProject)));
   }
 
   function readReviews() {
@@ -80,21 +104,101 @@
   }
 
   function allProjects() {
-    return [...data.projects, ...readProjects()];
+    return [...data.projects.map(normalizeProject), ...readProjects()];
   }
 
-  function categoryProjectCount(categoryId) {
-    return allProjects().filter((project) => project.category === categoryId).length;
+  function albumNames(projects = readProjects()) {
+    return [...new Set(projects.map((project) => project.album).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   }
 
-  function albumCount() {
-    return data.categories.reduce((total, category) => total + category.albums.length, 0);
+  function projectMediaMarkup(project, className = "") {
+    if (!project.image) return `<div class="admin-card-placeholder ${className}">No image</div>`;
+    if (project.mediaType === "embed") {
+      return `<iframe class="${className}" src="${escapeHtml(project.image)}" title="${escapeHtml(project.title)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
+    }
+    return `<img class="${className}" src="${escapeHtml(project.image)}" alt="${escapeHtml(project.title)}" loading="lazy">`;
   }
 
   function renderCategoryOptions() {
-    $("[data-admin-category-options]").innerHTML = data.categories.map((category) => `
-      <option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>
-    `).join("");
+    const options = data.categories.map((category) => `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`).join("");
+    $("[data-admin-category-options]").innerHTML = options;
+    $("[data-project-filter-category]").innerHTML = `<option value="">All sections</option>${options}`;
+  }
+
+  function renderAlbumControls() {
+    const projects = readProjects();
+    const albums = albumNames(projects);
+    $("[data-album-suggestions]").innerHTML = albums.map((album) => `<option value="${escapeHtml(album)}"></option>`).join("");
+    $("[data-project-filter-album]").innerHTML = `<option value="">All albums</option>${albums.map((album) => `<option value="${escapeHtml(album)}">${escapeHtml(album)}</option>`).join("")}`;
+    $("[data-admin-albums]").innerHTML = albums.length ? albums.map((album) => {
+      const count = projects.filter((project) => project.album === album).length;
+      return `<button type="button" data-album-chip="${escapeHtml(album)}"><strong>${escapeHtml(album)}</strong><span>${count} item${count === 1 ? "" : "s"}</span></button>`;
+    }).join("") : `<span>No albums yet. Add an album name when uploading a project.</span>`;
+  }
+
+  function renderStats() {
+    const projects = readProjects();
+    const reviews = readReviews();
+    const usage = Math.min(100, Math.round(((localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(REVIEWS_KEY) || "").length) / 50000));
+    $("[data-admin-project-count]").textContent = projects.length;
+    $("[data-admin-album-count]").textContent = albumNames(projects).length;
+    $("[data-admin-review-count]").textContent = reviews.length;
+    $("[data-admin-storage]").textContent = `${usage}%`;
+  }
+
+  function renderCategories() {
+    const projects = allProjects();
+    $("[data-admin-categories]").innerHTML = data.categories.map((category, index) => {
+      const categoryProjects = projects.filter((project) => project.category === category.id);
+      const albums = albumNames(categoryProjects);
+      return `<tr>
+        <td><strong>${escapeHtml(category.name)}</strong><br><span>${escapeHtml(category.description)}</span></td>
+        <td>${categoryProjects.length}</td>
+        <td>Visible</td>
+        <td>${albums.length ? albums.map(escapeHtml).join(", ") : "No albums yet"}</td>
+        <td>${index + 1}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function filteredProjects() {
+    const term = String($("[data-project-search]").value || "").trim().toLowerCase();
+    const category = $("[data-project-filter-category]").value;
+    const album = $("[data-project-filter-album]").value;
+    return readProjects()
+      .filter((project) => !category || project.category === category)
+      .filter((project) => !album || project.album === album)
+      .filter((project) => {
+        const haystack = [project.title, project.album, project.client, project.description, categoryName(project.category), project.price, project.delivery].join(" ").toLowerCase();
+        return !term || haystack.includes(term);
+      })
+      .sort((a, b) => (a.order || 9999) - (b.order || 9999) || new Date(b.date) - new Date(a.date));
+  }
+
+  function renderProjects() {
+    const projects = filteredProjects();
+    const grid = $("[data-admin-projects]");
+    $("[data-admin-empty]").hidden = projects.length > 0;
+    grid.innerHTML = projects.map((project) => `<article class="admin-project-card" data-project-id="${escapeHtml(project.id)}">
+      <div class="admin-project-media">${projectMediaMarkup(project)}</div>
+      <div class="admin-project-body">
+        <div>
+          <p class="admin-pill">${escapeHtml(categoryName(project.category))}</p>
+          <h3>${escapeHtml(project.title)}</h3>
+          <p>${escapeHtml(project.album)}</p>
+        </div>
+        <dl>
+          <div><dt>Price</dt><dd>${money.format(Number(project.price || 0))}</dd></div>
+          <div><dt>Delivery</dt><dd>${escapeHtml(project.delivery || "Pending")}</dd></div>
+          <div><dt>Client</dt><dd>${escapeHtml(project.client || "Not set")}</dd></div>
+        </dl>
+        <p>${escapeHtml(project.description || "No description yet.")}</p>
+        <div class="admin-card-actions">
+          <button class="button secondary" type="button" data-edit-project="${escapeHtml(project.id)}">Edit</button>
+          <button class="button ghost admin-delete" type="button" data-delete-project="${escapeHtml(project.id)}">Delete</button>
+        </div>
+      </div>
+    </article>`).join("");
   }
 
   function renderReviews() {
@@ -110,115 +214,165 @@
   }
 
   function renderDashboard() {
-    const storedProjects = readProjects();
-    const projects = allProjects();
-    $("[data-admin-project-count]").textContent = projects.length;
-    $("[data-admin-album-count]").textContent = albumCount();
-    $("[data-admin-categories]").innerHTML = data.categories.map((category, index) => `
-      <tr><td>${escapeHtml(category.name)}</td><td>${categoryProjectCount(category.id)}</td><td>Visible</td><td>Editable link</td><td>${index + 1}</td></tr>
-    `).join("");
-    $("[data-admin-projects]").innerHTML = storedProjects.length ? storedProjects.map((project) => {
-      const category = data.categories.find((item) => item.id === project.category);
-      return `<tr>
-        <td>${project.image && project.mediaType !== "embed" ? `<img class="admin-thumb" src="${escapeHtml(project.image)}" alt="">` : ""}${project.mediaType === "embed" ? `<span class="admin-thumb admin-embed-thumb">Album</span>` : ""}${escapeHtml(project.title)}</td>
-        <td>${escapeHtml(category?.name || "Unassigned")}</td>
-        <td>${money.format(Number(project.price || 0))}</td>
-        <td>${escapeHtml(project.delivery || "Pending")}</td>
-        <td><button class="button ghost admin-delete" type="button" data-delete-project="${escapeHtml(project.id)}">Delete</button></td>
-      </tr>`;
-    }).join("") : `<tr><td colspan="5">No image-link projects have been added yet.</td></tr>`;
+    renderStats();
+    renderCategoryOptions();
+    renderAlbumControls();
+    renderCategories();
+    renderProjects();
     renderReviews();
+    updatePreview();
   }
 
-  function addProject(form) {
+  function projectFromForm(form) {
+    const id = String(form.get("id") || "").trim() || `admin-${Date.now()}`;
     const image = safeUrl(form.get("image"));
-    if (!image) throw new Error("Please paste a valid Google Drive or image link that starts with http or https.");
-    const mediaType = mediaTypeForUrl(image);
-
-    const category = String(form.get("category") || "breakmat");
-    const categoryData = data.categories.find((item) => item.id === category) || data.categories[0];
-    const title = String(form.get("title") || "Untitled project").trim();
+    if (!image) throw new Error("Please paste a valid Google Drive, Imgur album, or direct image link that starts with http or https.");
+    const category = String(form.get("category") || data.categories[0]?.id || "breakmat");
+    const album = String(form.get("album") || `${categoryName(category)} Uploads`).trim();
     const price = Number(form.get("price") || 0);
-    const now = new Date();
-    const project = {
-      id: `admin-${Date.now()}`,
+    const order = Number(form.get("order") || 0);
+    return normalizeProject({
+      id,
       category,
-      album: `${categoryData.name} Uploads`,
-      title,
+      album,
+      title: String(form.get("title") || "Untitled project").trim(),
       description: String(form.get("description") || "").trim(),
       price: Number.isFinite(price) ? price : 0,
       delivery: String(form.get("delivery") || "Pending").trim(),
       client: String(form.get("client") || "").trim(),
-      services: [categoryData.name],
+      services: [categoryName(category)],
       popularity: 1,
-      date: now.toISOString().slice(0, 10),
+      date: new Date().toISOString().slice(0, 10),
+      order: Number.isFinite(order) && order > 0 ? order : readProjects().length + 1,
       height: "360px",
       image,
-      mediaType
-    };
-
-    const projects = readProjects();
-    projects.unshift(project);
-    saveProjects(projects);
+      mediaType: mediaTypeForUrl(image)
+    });
   }
 
-  function addReview(form) {
-    const photo = safeDirectImageUrl(form.get("photo"));
-    const reviewText = String(form.get("review") || "").trim();
-    if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
-    const review = {
-      id: `review-${Date.now()}`,
-      name: String(form.get("name") || "Client").trim(),
-      rating: Number(form.get("rating") || 5),
-      review: reviewText,
-      role: "Client Review",
-      photo
-    };
-    const reviews = readReviews();
-    reviews.unshift(review);
-    saveReviews(reviews);
+  function resetProjectForm(message = "") {
+    const form = $("[data-project-form]");
+    form.reset();
+    $("[data-project-id]").value = "";
+    $("[data-project-form-mode]").textContent = "Add portfolio image";
+    $("[data-project-save]").textContent = "Save Image Project";
+    $("[data-cancel-edit]").hidden = true;
+    $("[data-project-status]").textContent = message;
+    updatePreview();
+  }
+
+  function editProject(projectId) {
+    const project = readProjects().find((item) => item.id === projectId);
+    if (!project) return;
+    const form = $("[data-project-form]");
+    form.elements.id.value = project.id;
+    form.elements.title.value = project.title;
+    form.elements.category.value = project.category;
+    form.elements.album.value = project.album;
+    form.elements.image.value = project.image;
+    form.elements.price.value = Number(project.price || 0);
+    form.elements.delivery.value = project.delivery;
+    form.elements.client.value = project.client;
+    form.elements.order.value = project.order || "";
+    form.elements.description.value = project.description;
+    $("[data-project-form-mode]").textContent = "Editing portfolio image";
+    $("[data-project-save]").textContent = "Update Image Project";
+    $("[data-cancel-edit]").hidden = false;
+    $("[data-project-status]").textContent = "Editing selected project. Save to update the live portfolio in this browser.";
+    updatePreview();
+    $("#upload").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function updatePreview() {
+    const form = $("[data-project-form]");
+    if (!form) return;
+    const image = safeUrl(form.elements.image.value);
+    const category = form.elements.category.value;
+    const title = form.elements.title.value.trim() || "Project title";
+    const album = form.elements.album.value.trim() || "Album name";
+    const price = Number(form.elements.price.value || 0);
+    const previewProject = normalizeProject({ title, category, album, price, image, mediaType: mediaTypeForUrl(image) });
+    $("[data-preview-title]").textContent = title;
+    $("[data-preview-meta]").textContent = `${categoryName(category)} / ${album} / ${money.format(price)}`;
+    $("[data-preview-media]").innerHTML = image ? projectMediaMarkup(previewProject) : `<div class="admin-card-placeholder">Paste an image link to preview it here.</div>`;
   }
 
   $("[data-project-form]").addEventListener("submit", (event) => {
     event.preventDefault();
     const status = $("[data-project-status]");
     try {
-      addProject(new FormData(event.currentTarget));
-      event.currentTarget.reset();
-      status.textContent = "Image project saved. Open the public portfolio in this browser to see it.";
+      const project = projectFromForm(new FormData(event.currentTarget));
+      const projects = readProjects();
+      const existingIndex = projects.findIndex((item) => item.id === project.id);
+      if (existingIndex >= 0) projects[existingIndex] = project;
+      else projects.unshift(project);
+      saveProjects(projects);
+      resetProjectForm(existingIndex >= 0 ? "Project updated. Open the public portfolio in this browser to see it." : "Image project saved. Open the public portfolio in this browser to see it.");
       renderDashboard();
     } catch (error) {
       status.textContent = error.message;
     }
   });
 
+  $("[data-project-form]").addEventListener("input", updatePreview);
+  $("[data-cancel-edit]").addEventListener("click", () => resetProjectForm("Edit cancelled."));
+
+  $("[data-admin-projects]").addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-edit-project]");
+    if (editButton) {
+      editProject(editButton.dataset.editProject);
+      return;
+    }
+    const deleteButton = event.target.closest("[data-delete-project]");
+    if (!deleteButton) return;
+    if (!confirm("Delete this portfolio project?")) return;
+    saveProjects(readProjects().filter((project) => project.id !== deleteButton.dataset.deleteProject));
+    renderDashboard();
+  });
+
+  $("[data-project-search]").addEventListener("input", renderProjects);
+  $("[data-project-filter-category]").addEventListener("change", renderProjects);
+  $("[data-project-filter-album]").addEventListener("change", renderProjects);
+  $("[data-admin-albums]").addEventListener("click", (event) => {
+    const chip = event.target.closest("[data-album-chip]");
+    if (!chip) return;
+    $("[data-project-filter-album]").value = chip.dataset.albumChip;
+    renderProjects();
+    $("#projects").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
   $("[data-review-form]").addEventListener("submit", (event) => {
     event.preventDefault();
     const status = $("[data-review-status]");
     try {
-      addReview(new FormData(event.currentTarget));
+      const form = new FormData(event.currentTarget);
+      const photo = safeDirectImageUrl(form.get("photo"));
+      const reviewText = String(form.get("review") || "").trim();
+      if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
+      const reviews = readReviews();
+      reviews.unshift({
+        id: `review-${Date.now()}`,
+        name: String(form.get("name") || "Client").trim(),
+        rating: Number(form.get("rating") || 5),
+        review: reviewText,
+        role: "Client Review",
+        photo
+      });
+      saveReviews(reviews);
       event.currentTarget.reset();
       status.textContent = "Client review saved. Open the public portfolio in this browser to see it.";
-      renderReviews();
+      renderDashboard();
     } catch (error) {
       status.textContent = error.message;
     }
   });
 
-  $("[data-admin-projects]").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-delete-project]");
-    if (!button) return;
-    const projects = readProjects().filter((project) => project.id !== button.dataset.deleteProject);
-    saveProjects(projects);
-    renderDashboard();
-  });
-
   $("[data-admin-reviews]").addEventListener("click", (event) => {
     const button = event.target.closest("[data-delete-review]");
     if (!button) return;
-    const reviews = readReviews().filter((review) => review.id !== button.dataset.deleteReview);
-    saveReviews(reviews);
-    renderReviews();
+    if (!confirm("Delete this review?")) return;
+    saveReviews(readReviews().filter((review) => review.id !== button.dataset.deleteReview));
+    renderDashboard();
   });
 
   $("[data-logout]").addEventListener("click", () => {
@@ -226,6 +380,5 @@
     window.location.href = "login.html";
   });
 
-  renderCategoryOptions();
   renderDashboard();
 })();
