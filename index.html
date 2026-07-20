@@ -12,7 +12,7 @@
     <meta property="og:image" content="assets/hero-creative-studio.png">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="/">
-    <link rel="stylesheet" href="styles.css?v=20260720-3">
+    <link rel="stylesheet" href="styles.css?v=20260720-4">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -41,7 +41,8 @@
       <nav class="nav-links" data-nav>
         <a href="#services">Services</a>
         <a href="#portfolio">Portfolio</a>
-        <a href="#pricing">Pricing</a>
+        <a href="#shop">Shop</a>
+        <a href="#cart">Saved</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
         <a class="nav-admin" href="login.html">Admin</a>
@@ -58,7 +59,7 @@
           <h1>Premium Graphic Design Solutions That Elevate Your Brand</h1>
           <p class="hero-copy">JOSHGRAPHIX_WORLD crafts memorable visual identities, polished print materials, event graphics, and conversion-ready social designs for ambitious brands.</p>
           <div class="hero-actions">
-            <a class="button primary" href="#portfolio">View Portfolio</a>
+            <a class="button primary" href="#shop">Shop Designs</a>
             <a class="button secondary" href="#contact">Contact Me</a>
           </div>
           <div class="hero-stats" aria-label="Company statistics">
@@ -111,12 +112,31 @@
         </div>
       </section>
 
-      <section class="section pricing" id="pricing">
-        <div class="section-head">
-          <p class="eyebrow">Starting prices</p>
-          <h2>Clear sample pricing that can be edited later from the admin dashboard.</h2>
+      <section class="section pricing shop-section" id="shop">
+        <div class="section-head split">
+          <div>
+            <p class="eyebrow">Design shop</p>
+            <h2>Browse posted designs, save favorites, and build your order list</h2>
+          </div>
+          <div class="shop-account" id="cart">
+            <form data-account-form>
+              <label>Account Name<input name="name" placeholder="Your name"></label>
+              <button class="button secondary" type="submit">Save Account</button>
+            </form>
+            <p data-account-status></p>
+          </div>
         </div>
         <div class="pricing-grid" data-pricing></div>
+        <aside class="cart-panel">
+          <div class="cart-head">
+            <div>
+              <p class="eyebrow">Saved cart</p>
+              <h3 data-cart-summary>No saved designs yet</h3>
+            </div>
+            <button class="button ghost" type="button" data-clear-cart>Clear Saved</button>
+          </div>
+          <div class="cart-items" data-cart-items></div>
+        </aside>
       </section>
 
       <section class="section about" id="about">
@@ -210,6 +230,7 @@
           <div class="hero-actions">
             <button class="button secondary" type="button" data-fullscreen>Fullscreen</button>
             <button class="button ghost" type="button" data-share>Share</button>
+            <button class="button secondary" type="button" data-modal-save>Save Design</button>
             <a class="button primary" data-modal-whatsapp href="#">WhatsApp Inquiry</a>
           </div>
         </div>
@@ -222,8 +243,8 @@
       <a href="login.html">Admin Login</a>
     </footer>
 
-    <script src="data.js?v=20260720-3"></script>
-    <script src="app.js?v=20260720-3"></script>
+    <script src="data.js?v=20260720-4"></script>
+    <script src="app.js?v=20260720-4"></script>
   </body>
 </html>
 

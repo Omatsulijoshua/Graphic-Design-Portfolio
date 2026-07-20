@@ -9,6 +9,8 @@
   const STORAGE_KEY = "jgw_portfolio_projects";
   const REVIEWS_KEY = "jgw_client_reviews";
   const REACTIONS_KEY = "jgw_project_reactions";
+  const CART_KEY = "jgw_saved_design_cart";
+  const ACCOUNT_KEY = "jgw_shop_account";
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[char]);
@@ -36,6 +38,63 @@
       return { type: "embed", url: embed || project.image };
     }
     return { type: "image", url: normalizeImageUrl(project.image) };
+  }
+
+  function projectMediaMarkup(project, title) {
+    const media = projectMedia(project);
+    if (media.type === "embed" && media.url) {
+      return `
+        <div class="project-art image-art embed-art" style="--height:${project.height || "360px"}">
+          <iframe src="${escapeHtml(media.url)}" title="${title}" loading="lazy" referrerpolicy="no-referrer"></iframe>
+        </div>
+      `;
+    }
+    if (media.url) {
+      return `
+        <div class="project-art image-art" style="--height:${project.height || "360px"}">
+          <img src="${escapeHtml(media.url)}" alt="${title}" loading="lazy">
+        </div>
+      `;
+    }
+    const initials = title.split(" ").map((part) => part[0]).join("").slice(0, 3);
+    return `
+      <div class="project-art" style="--art:${project.art || "linear-gradient(135deg,#6a0dad,#d9a441)"};--height:${project.height || "360px"}">
+        <span>${initials}</span>
+      </div>
+    `;
+  }
+
+  function readCart() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveCart(cart) {
+    localStorage.setItem(CART_KEY, JSON.stringify([...new Set(cart)]));
+  }
+
+  function readAccount() {
+    try {
+      return JSON.parse(localStorage.getItem(ACCOUNT_KEY) || "null");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function findProject(projectId) {
+    return data.projects.find((project) => project.id === projectId);
+  }
+
+  function saveDesign(projectId) {
+    const cart = readCart();
+    if (!cart.includes(projectId)) cart.unshift(projectId);
+    saveCart(cart);
+    renderCart();
+    renderPricing();
   }
 
   function readStoredReviews() {
@@ -180,7 +239,7 @@
           </button>
         `;
       }).join("")}
-    ` : `<article class="album-chip"><strong>No albums yet</strong><p>Add album names when uploading images from the admin dashboard.</p></article>`;
+    ` : `<article class="album-chip"><strong>No albums yet</strong><p>Add album names when uploading images from Admin</p></article>`;
     const categoryPrices = categoryProjects.map((project) => Number(project.price || 0)).filter((price) => price > 0);
     $("[data-gallery-pricing]").innerHTML = categoryPrices.length
       ? `<strong>Pricing</strong><span>Starting from ${money.format(Math.min(...categoryPrices))}</span>`
@@ -188,27 +247,14 @@
     $("[data-projects]").innerHTML = projects.map((project) => {
       const title = escapeHtml(project.title);
       const album = escapeHtml(project.album || "Portfolio");
-      const media = projectMedia(project);
-      const initials = title.split(" ").map((part) => part[0]).join("").slice(0, 3);
       return `
         <article class="project-card" data-project-id="${escapeHtml(project.id)}">
-          ${media.type === "embed" && media.url ? `
-            <div class="project-art image-art embed-art" style="--height:${project.height || "360px"}">
-              <iframe src="${escapeHtml(media.url)}" title="${title}" loading="lazy" referrerpolicy="no-referrer"></iframe>
-            </div>
-          ` : media.url ? `
-            <div class="project-art image-art" style="--height:${project.height || "360px"}">
-              <img src="${escapeHtml(media.url)}" alt="${title}" loading="lazy">
-            </div>
-          ` : `
-            <div class="project-art" style="--art:${project.art || "linear-gradient(135deg,#6a0dad,#d9a441)"};--height:${project.height || "360px"}">
-              <span>${initials}</span>
-            </div>
-          `}
+          ${projectMediaMarkup(project, title)}
           <div class="project-info">
             <h3>${title}</h3>
             <p>${album}</p>
             <p class="price">${money.format(Number(project.price || 0))}</p>
+            <button class="button secondary save-design" type="button" data-save-design="${escapeHtml(project.id)}">Save Design</button>
             ${reactionMarkup(project.id)}
           </div>
         </article>
@@ -269,14 +315,50 @@
   }
 
   function renderPricing() {
-    const featured = data.projects.slice(0, 6);
-    $("[data-pricing]").innerHTML = featured.length ? featured.map((project) => `
-      <article class="pricing-card">
-        <h3>${project.title}</h3>
-        <p>${project.services.join(", ")}</p>
-        <strong>${money.format(project.price)}</strong>
+    const projects = [...data.projects].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const cart = readCart();
+    $("[data-pricing]").innerHTML = projects.length ? projects.map((project) => {
+      const title = escapeHtml(project.title);
+      const category = data.categories.find((item) => item.id === project.category);
+      const saved = cart.includes(project.id);
+      return `
+      <article class="pricing-card shop-card" data-shop-project="${escapeHtml(project.id)}">
+        ${projectMediaMarkup(project, title)}
+        <div class="shop-card-body">
+          <span>${escapeHtml(category?.name || "Design")}</span>
+          <h3>${title}</h3>
+          <p>${escapeHtml(project.album || "Portfolio")}</p>
+          <strong>${money.format(Number(project.price || 0))}</strong>
+          <div class="shop-card-actions">
+            <button class="button primary" type="button" data-save-design="${escapeHtml(project.id)}">${saved ? "Saved" : "Save to Cart"}</button>
+            <button class="button ghost" type="button" data-view-design="${escapeHtml(project.id)}">View</button>
+          </div>
+        </div>
       </article>
-    `).join("") : `<article class="pricing-card"><h3>No pricing samples yet</h3><p>Add real prices when your first portfolio projects are uploaded.</p><strong>Pending</strong></article>`;
+    `;
+    }).join("") : `<article class="pricing-card shop-empty"><h3>No posted designs yet</h3><p>Add portfolio images from Admin and they will appear in this shop section.</p><strong>Pending</strong></article>`;
+    renderCart();
+  }
+
+  function renderCart() {
+    const account = readAccount();
+    const cartProjects = readCart().map(findProject).filter(Boolean);
+    const summary = $("[data-cart-summary]");
+    const accountStatus = $("[data-account-status]");
+    const accountInput = $("[data-account-form] input[name='name']");
+    if (account && accountInput && !accountInput.value) accountInput.value = account.name || "";
+    if (accountStatus) accountStatus.textContent = account?.name ? `Saved for ${account.name}` : "Create a simple browser account to keep saved designs on this phone.";
+    if (summary) summary.textContent = cartProjects.length ? `${cartProjects.length} saved design${cartProjects.length === 1 ? "" : "s"}` : "No saved designs yet";
+    $("[data-cart-items]").innerHTML = cartProjects.length ? cartProjects.map((project) => `
+      <article class="cart-item">
+        <div>${projectMediaMarkup(project, escapeHtml(project.title))}</div>
+        <section>
+          <strong>${escapeHtml(project.title)}</strong>
+          <span>${escapeHtml(project.album || "Portfolio")} / ${money.format(Number(project.price || 0))}</span>
+          <button class="button ghost" type="button" data-remove-cart="${escapeHtml(project.id)}">Remove</button>
+        </section>
+      </article>
+    `).join("") : `<p class="cart-empty">Saved designs will appear here.</p>`;
   }
 
   function renderTestimonials(index = 0) {
@@ -383,9 +465,53 @@
       renderGallery(currentCategoryId);
     });
     $("[data-projects]").addEventListener("click", (event) => {
-      if (event.target.closest("[data-reaction]")) return;
+      if (event.target.closest("[data-reaction], [data-save-design]")) return;
       const card = event.target.closest("[data-project-id]");
       if (card) openProject(card.dataset.projectId);
+    });
+    $("[data-pricing]").addEventListener("click", (event) => {
+      const saveButton = event.target.closest("[data-save-design]");
+      if (saveButton) {
+        saveDesign(saveButton.dataset.saveDesign);
+        return;
+      }
+      const viewButton = event.target.closest("[data-view-design]");
+      const card = event.target.closest("[data-shop-project]");
+      const projectId = viewButton?.dataset.viewDesign || card?.dataset.shopProject;
+      if (!projectId) return;
+      const project = findProject(projectId);
+      if (!project) return;
+      currentCategoryId = project.category;
+      currentAlbum = project.album || "";
+      activeProjectSet = filteredProjects(currentCategoryId);
+      activeProjectIndex = activeProjectSet.findIndex((item) => item.id === projectId);
+      if (activeProjectIndex < 0) activeProjectIndex = 0;
+      updateModal();
+      $("[data-modal]").hidden = false;
+      document.body.classList.add("modal-open");
+    });
+    $("[data-account-form]").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const name = String(form.get("name") || "").trim();
+      if (name) localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ name }));
+      renderCart();
+    });
+    $("[data-cart-items]").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-cart]");
+      if (!button) return;
+      saveCart(readCart().filter((id) => id !== button.dataset.removeCart));
+      renderCart();
+      renderPricing();
+    });
+    $("[data-clear-cart]").addEventListener("click", () => {
+      saveCart([]);
+      renderCart();
+      renderPricing();
+    });
+    $("[data-modal-save]").addEventListener("click", () => {
+      const project = activeProjectSet[activeProjectIndex];
+      if (project) saveDesign(project.id);
     });
     document.addEventListener("click", (event) => {
       const button = event.target.closest("[data-reaction]");

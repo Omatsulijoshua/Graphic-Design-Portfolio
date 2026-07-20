@@ -761,3 +761,136 @@ td { color: var(--muted); }
     grid-template-columns: 1fr;
   }
 }
+
+.shop-section {
+  background: rgba(255, 255, 255, 0.025);
+}
+.shop-account {
+  width: min(420px, 100%);
+}
+.shop-account form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+.shop-account label {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.shop-account p {
+  margin: 0.55rem 0 0;
+  color: var(--gold);
+  font-size: 0.9rem;
+}
+.shop-card {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.shop-card .project-art {
+  min-height: 230px;
+}
+.shop-card-body {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+}
+.shop-card-body > span {
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.shop-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.shop-card-actions .button {
+  flex: 1 1 130px;
+}
+.shop-empty {
+  grid-column: 1 / -1;
+}
+.save-design {
+  width: 100%;
+  margin-top: 0.7rem;
+}
+.cart-panel {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  background: linear-gradient(145deg, var(--panel), rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.cart-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.cart-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+.cart-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.cart-item .project-art {
+  min-height: 82px;
+  height: 82px;
+}
+.cart-item .project-art::after {
+  display: none;
+}
+.cart-item iframe {
+  pointer-events: none;
+}
+.cart-item strong,
+.cart-item span {
+  display: block;
+}
+.cart-item span,
+.cart-empty {
+  color: var(--muted);
+}
+.cart-item .button {
+  min-height: 2.35rem;
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .shop-account form {
+    grid-template-columns: 1fr;
+  }
+  .cart-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  .cart-item {
+    grid-template-columns: 78px 1fr;
+  }
+  .cart-item .project-art {
+    min-height: 72px;
+    height: 72px;
+  }
+}
