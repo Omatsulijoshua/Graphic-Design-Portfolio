@@ -19,6 +19,7 @@
           <a href="#categories">Categories</a>
           <a href="#upload">Upload Images</a>
           <a href="#projects">Projects</a>
+          <a href="#comments">Comments</a>
           <a href="#reviews">Reviews</a>
           <a href="#messages">Messages</a>
           <button class="button ghost" type="button" data-logout>Logout</button>
@@ -40,6 +41,7 @@
           <article class="admin-card"><span>Projects</span><strong data-admin-project-count>0</strong></article>
           <article class="admin-card"><span>Albums</span><strong data-admin-album-count>0</strong></article>
           <article class="admin-card"><span>Reviews</span><strong data-admin-review-count>0</strong></article>
+          <article class="admin-card"><span>Comments</span><strong data-admin-comment-count>0</strong></article>
           <article class="admin-card"><span>Storage Usage</span><strong data-admin-storage>0%</strong></article>
         </div>
 
@@ -117,6 +119,19 @@
           <div class="admin-project-grid" data-admin-projects></div>
           <div class="admin-empty" data-admin-empty hidden>
             No projects match this view yet. Add an image above and it will appear here.
+          </div>
+        </section>
+
+        <section id="comments" class="admin-panel-section">
+          <div class="section-head admin-section-head">
+            <p class="eyebrow">Comments and reactions</p>
+            <h2>Delete comments under each album post and reset emoji reactions when needed.</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comment</th><th>Project</th><th>Posted</th><th>Action</th></tr></thead>
+              <tbody data-admin-comments></tbody>
+            </table>
           </div>
         </section>
 

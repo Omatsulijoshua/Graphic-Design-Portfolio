@@ -2,6 +2,8 @@
   const SESSION_KEY = "jgw_admin_session";
   const STORAGE_KEY = "jgw_portfolio_projects";
   const REVIEWS_KEY = "jgw_client_reviews";
+  const COMMENTS_KEY = "jgw_project_comments";
+  const REACTIONS_KEY = "jgw_project_reactions";
   const data = window.JGW_DATA;
   const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   const API_BASE_URL = (window.JGW_API_BASE_URL || "https://joshgraphics-portfolio-api.onrender.com").replace(/\/$/, "");
@@ -184,16 +186,21 @@
     try {
       const localProjects = readProjects();
       const localReviews = readReviews();
-      const [projectPayload, reviewPayload] = await Promise.all([
+      const [projectPayload, reviewPayload, commentPayload, reactionPayload] = await Promise.all([
         fetchJson("/api/projects"),
-        fetchJson("/api/reviews")
+        fetchJson("/api/reviews"),
+        fetchJson("/api/comments"),
+        fetchJson("/api/reactions")
       ]);
       const backendProjects = Array.isArray(projectPayload.projects) ? projectPayload.projects.map(normalizeProject) : [];
       const backendReviews = Array.isArray(reviewPayload.reviews) ? reviewPayload.reviews : [];
+      const backendComments = Array.isArray(commentPayload.comments) ? commentPayload.comments : [];
       const mergedProjects = Array.from(new Map([...backendProjects, ...localProjects].map((project) => [project.id, project])).values());
       const mergedReviews = Array.from(new Map([...backendReviews, ...localReviews].map((review) => [review.id, review])).values());
       saveProjects(mergedProjects);
       saveReviews(mergedReviews);
+      saveComments(backendComments);
+      if (reactionPayload.reactions && typeof reactionPayload.reactions === "object") saveReactions(reactionPayload.reactions);
       backendReady = true;
       await Promise.all([
         ...localProjects.map((project) => saveProjectOnline(project)),
@@ -224,6 +231,16 @@
     backendReady = true;
   }
 
+  async function deleteCommentOnline(id) {
+    await fetchJson(`/api/comments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    backendReady = true;
+  }
+
+  async function resetReactionOnline(projectId) {
+    await fetchJson(`/api/reactions?projectId=${encodeURIComponent(projectId)}`, { method: "DELETE" });
+    backendReady = true;
+  }
+
   function readReviews() {
     try {
       const parsed = JSON.parse(localStorage.getItem(REVIEWS_KEY) || "[]");
@@ -235,6 +252,31 @@
 
   function saveReviews(reviews) {
     localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
+  }
+
+  function readComments() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(COMMENTS_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveComments(comments) {
+    localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+  }
+
+  function readReactions() {
+    try {
+      return JSON.parse(localStorage.getItem(REACTIONS_KEY) || "{}");
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveReactions(reactions) {
+    localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions));
   }
 
   function encodeMobilePortfolio() {
@@ -298,10 +340,12 @@
   function renderStats() {
     const projects = readProjects();
     const reviews = readReviews();
-    const usage = Math.min(100, Math.round(((localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(REVIEWS_KEY) || "").length) / 50000));
+    const comments = readComments();
+    const usage = Math.min(100, Math.round(((localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(REVIEWS_KEY) || "").length + (localStorage.getItem(COMMENTS_KEY) || "").length) / 50000));
     $("[data-admin-project-count]").textContent = projects.length;
     $("[data-admin-album-count]").textContent = albumNames(projects).length;
     $("[data-admin-review-count]").textContent = reviews.length;
+    $("[data-admin-comment-count]").textContent = comments.length;
     $("[data-admin-storage]").textContent = `${usage}%`;
   }
 
@@ -336,6 +380,7 @@
 
   function renderProjects() {
     const projects = filteredProjects();
+    const reactions = readReactions();
     const grid = $("[data-admin-projects]");
     $("[data-admin-empty]").hidden = projects.length > 0;
     grid.innerHTML = projects.map((project) => `<article class="admin-project-card" data-project-id="${escapeHtml(project.id)}">
@@ -352,8 +397,10 @@
           <div><dt>Client</dt><dd>${escapeHtml(project.client || "Not set")}</dd></div>
         </dl>
         <p>${escapeHtml(project.description || "No description yet.")}</p>
+        <p class="admin-reaction-summary">👍🏻 ${Number(reactions[project.id]?.like || 0)} · 👎🏻 ${Number(reactions[project.id]?.dislike || 0)} · 🔥 ${Number(reactions[project.id]?.fire || 0)}</p>
         <div class="admin-card-actions">
           <button class="button secondary" type="button" data-edit-project="${escapeHtml(project.id)}">Edit</button>
+          <button class="button ghost" type="button" data-reset-reactions="${escapeHtml(project.id)}">Reset Emoji</button>
           <button class="button ghost admin-delete" type="button" data-delete-project="${escapeHtml(project.id)}">Delete</button>
         </div>
       </div>
@@ -372,6 +419,23 @@
     </tr>`).join("") : `<tr><td colspan="4">No client reviews or satisfaction images have been added yet.</td></tr>`;
   }
 
+  function renderComments() {
+    const comments = readComments();
+    const projects = allProjects();
+    const body = $("[data-admin-comments]");
+    if (!body) return;
+    body.innerHTML = comments.length ? comments.map((comment) => {
+      const project = projects.find((item) => item.id === comment.projectId);
+      const posted = comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "Recent";
+      return `<tr>
+        <td><strong>${escapeHtml(comment.name || "Guest")}</strong><br>${escapeHtml(comment.message || "")}</td>
+        <td>${escapeHtml(project?.title || comment.projectId || "Unknown project")}</td>
+        <td>${escapeHtml(posted)}</td>
+        <td><button class="button ghost admin-delete" type="button" data-delete-comment="${escapeHtml(comment.id)}">Delete</button></td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="4">No comments have been posted yet.</td></tr>`;
+  }
+
   function renderDashboard() {
     renderStats();
     renderCategoryOptions();
@@ -379,6 +443,7 @@
     renderCategories();
     renderProjects();
     renderReviews();
+    renderComments();
     updatePreview();
   }
 
@@ -498,6 +563,21 @@
       return;
     }
     const deleteButton = event.target.closest("[data-delete-project]");
+    const resetButton = event.target.closest("[data-reset-reactions]");
+    if (resetButton) {
+      if (!confirm("Reset emoji reactions for this project?")) return;
+      const reactions = readReactions();
+      delete reactions[resetButton.dataset.resetReactions];
+      saveReactions(reactions);
+      try {
+        await resetReactionOnline(resetButton.dataset.resetReactions);
+        showToast("Emoji reactions reset.", "success");
+      } catch (error) {
+        showToast("Emoji reset saved locally, but backend reset failed.", "error");
+      }
+      renderDashboard();
+      return;
+    }
     if (!deleteButton) return;
     if (!confirm("Delete this portfolio project?")) return;
     saveProjects(readProjects().filter((project) => project.id !== deleteButton.dataset.deleteProject));
@@ -505,6 +585,20 @@
       await deleteProjectOnline(deleteButton.dataset.deleteProject);
     } catch (error) {
       console.warn("Project was deleted locally, but backend delete failed.");
+    }
+    renderDashboard();
+  });
+
+  $("[data-admin-comments]").addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-delete-comment]");
+    if (!button) return;
+    if (!confirm("Delete this comment?")) return;
+    saveComments(readComments().filter((comment) => comment.id !== button.dataset.deleteComment));
+    try {
+      await deleteCommentOnline(button.dataset.deleteComment);
+      showToast("Comment deleted.", "success");
+    } catch (error) {
+      showToast("Comment deleted locally, but backend delete failed.", "error");
     }
     renderDashboard();
   });

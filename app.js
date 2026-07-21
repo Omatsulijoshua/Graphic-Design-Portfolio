@@ -9,6 +9,7 @@
   const STORAGE_KEY = "jgw_portfolio_projects";
   const REVIEWS_KEY = "jgw_client_reviews";
   const REACTIONS_KEY = "jgw_project_reactions";
+  const COMMENTS_KEY = "jgw_project_comments";
   const CART_KEY = "jgw_saved_design_cart";
   const ACCOUNT_KEY = "jgw_shop_account";
   const API_BASE_URL = (window.JGW_API_BASE_URL || "https://joshgraphics-portfolio-api.onrender.com").replace(/\/$/, "");
@@ -195,6 +196,19 @@
     localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions));
   }
 
+  function readComments() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(COMMENTS_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveComments(comments) {
+    localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+  }
+
   function reactionCounts(projectId) {
     const defaults = { like: 0, dislike: 0, fire: 0 };
     return { ...defaults, ...(readReactions()[projectId] || {}) };
@@ -247,11 +261,34 @@
     throw lastError;
   }
 
+  function commentMarkup(projectId) {
+    const comments = readComments().filter((comment) => comment.projectId === projectId).slice(0, 3);
+    return `
+      <section class="project-comments" data-comments-for="${escapeHtml(projectId)}">
+        <form class="comment-form" data-comment-form="${escapeHtml(projectId)}">
+          <input name="name" maxlength="40" placeholder="Your name">
+          <textarea name="message" maxlength="240" rows="2" required placeholder="Write a comment"></textarea>
+          <button class="button ghost" type="submit">Comment</button>
+        </form>
+        <div class="comment-list">
+          ${comments.length ? comments.map((comment) => `
+            <article class="comment-item">
+              <strong>${escapeHtml(comment.name || "Guest")}</strong>
+              <p>${escapeHtml(comment.message || "")}</p>
+            </article>
+          `).join("") : `<p class="comment-empty">No comments yet.</p>`}
+        </div>
+      </section>
+    `;
+  }
+
   async function loadBackendData() {
     try {
-      const [projectPayload, reviewPayload] = await Promise.all([
+      const [projectPayload, reviewPayload, reactionPayload, commentPayload] = await Promise.all([
         fetchJson("/api/projects"),
-        fetchJson("/api/reviews")
+        fetchJson("/api/reviews"),
+        fetchJson("/api/reactions"),
+        fetchJson("/api/comments")
       ]);
       if (Array.isArray(projectPayload.projects) && projectPayload.projects.length) {
         data.projects = projectPayload.projects.map((project) => ({
@@ -265,9 +302,32 @@
       if (Array.isArray(reviewPayload.reviews) && reviewPayload.reviews.length) {
         data.testimonials = reviewPayload.reviews.map((review) => ({ ...review, photo: normalizeImageUrl(review.photo) }));
       }
+      if (reactionPayload.reactions && typeof reactionPayload.reactions === "object") {
+        saveReactions(reactionPayload.reactions);
+      }
+      if (Array.isArray(commentPayload.comments)) {
+        saveComments(commentPayload.comments);
+      }
     } catch (error) {
       console.warn("Using browser-saved portfolio data because the backend is not available yet.");
     }
+  }
+
+  async function saveReactionOnline(projectId, reaction) {
+    const payload = await fetchJson("/api/reactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, reaction })
+    });
+    return payload.counts;
+  }
+
+  async function saveCommentOnline(comment) {
+    await fetchJson("/api/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comment })
+    });
   }
 
   function renderServices() {
@@ -380,6 +440,7 @@
             <p class="price">${money.format(Number(project.price || 0))}</p>
             <button class="button secondary save-design" type="button" data-save-design="${escapeHtml(project.id)}">Save Design</button>
             ${reactionMarkup(project.id)}
+            ${commentMarkup(project.id)}
           </div>
         </article>
       `;
@@ -626,7 +687,7 @@
       renderGallery(currentCategoryId);
     });
     $("[data-projects]").addEventListener("click", (event) => {
-      if (event.target.closest("[data-reaction], [data-save-design]")) return;
+      if (event.target.closest("[data-reaction], [data-save-design], [data-comment-form]")) return;
       const card = event.target.closest("[data-project-id]");
       if (card) openProject(card.dataset.projectId);
     });
@@ -702,7 +763,7 @@
       const project = activeProjectSet[activeProjectIndex];
       if (project) saveDesign(project.id);
     });
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-reaction]");
       if (!button) return;
       const group = button.closest("[data-reactions-for]");
@@ -714,6 +775,39 @@
       reactions[projectId][reaction] += 1;
       saveReactions(reactions);
       group.outerHTML = reactionMarkup(projectId);
+      try {
+        const counts = await saveReactionOnline(projectId, reaction);
+        saveReactions({ ...readReactions(), [projectId]: counts });
+        const updated = document.querySelector(`[data-reactions-for="${CSS.escape(projectId)}"]`);
+        if (updated) updated.outerHTML = reactionMarkup(projectId);
+      } catch (error) {
+        console.warn("Reaction was saved locally, but backend save failed.");
+      }
+    });
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-comment-form]");
+      if (!form) return;
+      event.preventDefault();
+      const projectId = form.dataset.commentForm;
+      const formData = new FormData(form);
+      const message = String(formData.get("message") || "").trim();
+      if (!message) return;
+      const comment = {
+        id: `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        projectId,
+        name: String(formData.get("name") || "Guest").trim() || "Guest",
+        message,
+        createdAt: new Date().toISOString()
+      };
+      saveComments([comment, ...readComments()]);
+      form.reset();
+      const block = document.querySelector(`[data-comments-for="${CSS.escape(projectId)}"]`);
+      if (block) block.outerHTML = commentMarkup(projectId);
+      try {
+        await saveCommentOnline(comment);
+      } catch (error) {
+        console.warn("Comment was saved locally, but backend save failed.");
+      }
     });
     $$("[data-close-modal]").forEach((node) => node.addEventListener("click", closeModal));
     $("[data-slide-prev]").addEventListener("click", () => { activeProjectIndex = (activeProjectIndex - 1 + activeProjectSet.length) % activeProjectSet.length; updateModal(); });

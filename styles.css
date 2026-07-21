@@ -257,6 +257,54 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); }
 .project-info { padding: 0.9rem; }
 .project-info p { margin: 0.35rem 0 0; color: var(--muted); }
 .price { color: var(--gold); font-weight: 900; }
+.project-comments {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+.comment-form {
+  display: grid;
+  gap: 0.55rem;
+}
+.comment-form input,
+.comment-form textarea {
+  min-height: 2.45rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+.comment-form button {
+  min-height: 2.35rem;
+  padding: 0.55rem 0.75rem;
+}
+.comment-list {
+  display: grid;
+  gap: 0.55rem;
+}
+.comment-item {
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+}
+.comment-item strong {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--gold);
+}
+.comment-item p,
+.comment-empty {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
 
 .pricing-card strong { display: block; color: var(--gold); font-size: 1.7rem; margin-top: 0.7rem; }
 .about { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr); gap: 1.5rem; align-items: stretch; }
@@ -757,6 +805,12 @@ td { color: var(--muted); }
 .admin-project-body p {
   color: var(--muted);
   line-height: 1.55;
+}
+.admin-reaction-summary {
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
 }
 .admin-card-placeholder {
   width: 100%;

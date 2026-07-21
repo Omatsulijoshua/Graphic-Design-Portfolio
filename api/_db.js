@@ -31,6 +31,22 @@ async function ensureTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    await query`
+      CREATE TABLE IF NOT EXISTS portfolio_comments (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        data JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await query`
+      CREATE TABLE IF NOT EXISTS portfolio_reactions (
+        project_id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
   })();
   return ready;
 }
