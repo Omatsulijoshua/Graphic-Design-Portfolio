@@ -204,9 +204,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); }
   opacity: 0.74;
   transition: transform 260ms ease;
 }
+.category-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  transition: transform 260ms ease;
+}
+.category-card.has-thumbnail::before {
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(5, 3, 8, 0.08), rgba(42, 6, 72, 0.34));
+  opacity: 1;
+}
 .category-card:hover::before { transform: scale(1.06); }
-.category-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent, rgba(5, 3, 8, 0.9)); }
-.category-card > div { position: relative; z-index: 1; }
+.category-card.has-thumbnail:hover::before { transform: none; }
+.category-card:hover .category-thumbnail { transform: scale(1.06); }
+.category-card::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(transparent, rgba(5, 3, 8, 0.9)); }
+.category-card > div { position: relative; z-index: 2; }
 .category-card strong { font-size: 1.6rem; }
 .category-card span { display: block; color: var(--muted); margin-top: 0.3rem; }
 
