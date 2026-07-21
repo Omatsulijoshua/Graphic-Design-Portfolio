@@ -7,6 +7,7 @@
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+  let backendReady = false;
 
   if (sessionStorage.getItem(SESSION_KEY) !== "active") {
     window.location.replace("login.html");
@@ -88,6 +89,59 @@
 
   function saveProjects(projects) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projects.map(normalizeProject)));
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, {
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...(options.headers || {}) },
+      ...options
+    });
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return response.json();
+  }
+
+  async function loadBackendData() {
+    try {
+      const localProjects = readProjects();
+      const localReviews = readReviews();
+      const [projectPayload, reviewPayload] = await Promise.all([
+        fetchJson("/api/projects"),
+        fetchJson("/api/reviews")
+      ]);
+      const backendProjects = Array.isArray(projectPayload.projects) ? projectPayload.projects.map(normalizeProject) : [];
+      const backendReviews = Array.isArray(reviewPayload.reviews) ? reviewPayload.reviews : [];
+      const mergedProjects = Array.from(new Map([...backendProjects, ...localProjects].map((project) => [project.id, project])).values());
+      const mergedReviews = Array.from(new Map([...backendReviews, ...localReviews].map((review) => [review.id, review])).values());
+      saveProjects(mergedProjects);
+      saveReviews(mergedReviews);
+      backendReady = true;
+      await Promise.all([
+        ...localProjects.map((project) => saveProjectOnline(project)),
+        ...localReviews.map((review) => saveReviewOnline(review))
+      ]);
+    } catch (error) {
+      backendReady = false;
+    }
+  }
+
+  async function saveProjectOnline(project) {
+    await fetchJson("/api/projects", { method: "POST", body: JSON.stringify({ project }) });
+    backendReady = true;
+  }
+
+  async function deleteProjectOnline(id) {
+    await fetchJson(`/api/projects?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    backendReady = true;
+  }
+
+  async function saveReviewOnline(review) {
+    await fetchJson("/api/reviews", { method: "POST", body: JSON.stringify({ review }) });
+    backendReady = true;
+  }
+
+  async function deleteReviewOnline(id) {
+    await fetchJson(`/api/reviews?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    backendReady = true;
   }
 
   function readReviews() {
@@ -322,7 +376,7 @@
     $("[data-preview-media]").innerHTML = image ? projectMediaMarkup(previewProject) : `<div class="admin-card-placeholder">Paste an image link to preview it here.</div>`;
   }
 
-  $("[data-project-form]").addEventListener("submit", (event) => {
+  $("[data-project-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
     const status = $("[data-project-status]");
     try {
@@ -332,10 +386,11 @@
       if (existingIndex >= 0) projects[existingIndex] = project;
       else projects.unshift(project);
       saveProjects(projects);
-      resetProjectForm(existingIndex >= 0 ? "Project updated. Open the public portfolio in this browser to see it." : "Image project saved. Open the public portfolio in this browser to see it.");
+      await saveProjectOnline(project);
+      resetProjectForm(existingIndex >= 0 ? "Project updated online. It will show on every device." : "Image project saved online. It will show on every device.");
       renderDashboard();
     } catch (error) {
-      status.textContent = error.message;
+      status.textContent = `${error.message} If DATABASE_URL is not added to Vercel yet, it will only save on this browser.`;
     }
   });
 
@@ -343,7 +398,7 @@
   $("[data-copy-mobile-link]").addEventListener("click", copyMobilePortfolioLink);
   $("[data-cancel-edit]").addEventListener("click", () => resetProjectForm("Edit cancelled."));
 
-  $("[data-admin-projects]").addEventListener("click", (event) => {
+  $("[data-admin-projects]").addEventListener("click", async (event) => {
     const editButton = event.target.closest("[data-edit-project]");
     if (editButton) {
       editProject(editButton.dataset.editProject);
@@ -353,6 +408,11 @@
     if (!deleteButton) return;
     if (!confirm("Delete this portfolio project?")) return;
     saveProjects(readProjects().filter((project) => project.id !== deleteButton.dataset.deleteProject));
+    try {
+      await deleteProjectOnline(deleteButton.dataset.deleteProject);
+    } catch (error) {
+      console.warn("Project was deleted locally, but backend delete failed.");
+    }
     renderDashboard();
   });
 
@@ -367,7 +427,7 @@
     $("#projects").scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
-  $("[data-review-form]").addEventListener("submit", (event) => {
+  $("[data-review-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
     const status = $("[data-review-status]");
     try {
@@ -376,28 +436,35 @@
       const reviewText = String(form.get("review") || "").trim();
       if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
       const reviews = readReviews();
-      reviews.unshift({
+      const review = {
         id: `review-${Date.now()}`,
         name: String(form.get("name") || "Client").trim(),
         rating: Number(form.get("rating") || 5),
         review: reviewText,
         role: "Client Review",
         photo
-      });
+      };
+      reviews.unshift(review);
       saveReviews(reviews);
+      await saveReviewOnline(review);
       event.currentTarget.reset();
-      status.textContent = "Client review saved. Open the public portfolio in this browser to see it.";
+      status.textContent = "Client review saved online. It will show on every device.";
       renderDashboard();
     } catch (error) {
-      status.textContent = error.message;
+      status.textContent = `${error.message} If DATABASE_URL is not added to Vercel yet, it will only save on this browser.`;
     }
   });
 
-  $("[data-admin-reviews]").addEventListener("click", (event) => {
+  $("[data-admin-reviews]").addEventListener("click", async (event) => {
     const button = event.target.closest("[data-delete-review]");
     if (!button) return;
     if (!confirm("Delete this review?")) return;
     saveReviews(readReviews().filter((review) => review.id !== button.dataset.deleteReview));
+    try {
+      await deleteReviewOnline(button.dataset.deleteReview);
+    } catch (error) {
+      console.warn("Review was deleted locally, but backend delete failed.");
+    }
     renderDashboard();
   });
 
@@ -406,5 +473,5 @@
     window.location.href = "login.html";
   });
 
-  renderDashboard();
+  loadBackendData().then(renderDashboard);
 })();

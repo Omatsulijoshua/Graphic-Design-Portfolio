@@ -231,6 +231,35 @@
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
+  async function fetchJson(url) {
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return response.json();
+  }
+
+  async function loadBackendData() {
+    try {
+      const [projectPayload, reviewPayload] = await Promise.all([
+        fetchJson("/api/projects"),
+        fetchJson("/api/reviews")
+      ]);
+      if (Array.isArray(projectPayload.projects) && projectPayload.projects.length) {
+        data.projects = projectPayload.projects.map((project) => ({
+          ...project,
+          image: projectMedia(project).url,
+          mediaType: projectMedia(project).type,
+          price: Number(project.price || 0),
+          services: Array.isArray(project.services) ? project.services : [project.service || "Design"]
+        }));
+      }
+      if (Array.isArray(reviewPayload.reviews) && reviewPayload.reviews.length) {
+        data.testimonials = reviewPayload.reviews.map((review) => ({ ...review, photo: normalizeImageUrl(review.photo) }));
+      }
+    } catch (error) {
+      console.warn("Using browser-saved portfolio data because the backend is not available yet.");
+    }
+  }
+
   function renderServices() {
     const grid = $("[data-services]");
     grid.innerHTML = data.services.map(([name, description]) => `
@@ -719,14 +748,19 @@
     });
   }
 
-  renderServices();
-  renderCategories();
-  renderShopControls();
-  renderPricing();
-  renderTestimonials();
-  renderFaqAndContact();
-  bindEvents();
-  animateCounters();
+  async function init() {
+    await loadBackendData();
+    renderServices();
+    renderCategories();
+    renderShopControls();
+    renderPricing();
+    renderTestimonials();
+    renderFaqAndContact();
+    bindEvents();
+    animateCounters();
+  }
+
+  init();
 })();
 
 
