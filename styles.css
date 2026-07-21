@@ -478,6 +478,19 @@ td { color: var(--muted); }
   border: 0;
   background: #050308;
 }
+.embed-art {
+  --imgur-crop-top: 72px;
+}
+.embed-art iframe {
+  position: absolute;
+  inset: calc(var(--imgur-crop-top) * -1) 0 auto;
+  height: calc(100% + var(--imgur-crop-top));
+  min-height: calc(var(--height) + var(--imgur-crop-top));
+}
+.admin-embed-crop {
+  transform: translateY(-72px);
+  min-height: calc(100% + 72px) !important;
+}
 .project-viewer iframe {
   min-height: 540px;
   padding: 1rem;

@@ -315,7 +315,7 @@
   function projectMediaMarkup(project, className = "") {
     if (!project.image) return `<div class="admin-card-placeholder ${className}">No image</div>`;
     if (project.mediaType === "embed") {
-      return `<iframe class="${className}" src="${escapeHtml(project.image)}" title="${escapeHtml(project.title)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
+      return `<iframe class="${className} admin-embed-crop" src="${escapeHtml(project.image)}" title="${escapeHtml(project.title)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
     }
     return `<img class="${className}" src="${escapeHtml(project.image)}" alt="${escapeHtml(project.title)}" loading="lazy">`;
   }
