@@ -52,6 +52,76 @@
     return String(value ?? "").replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[char]);
   }
 
+  function showToast(message, tone = "success") {
+    const region = $("[data-admin-toasts]");
+    if (!region) return;
+    const toast = document.createElement("div");
+    toast.className = `admin-toast ${tone}`;
+    toast.setAttribute("role", "status");
+    toast.innerHTML = `<strong>${tone === "error" ? "Action needed" : "Done"}</strong><span>${escapeHtml(message)}</span>`;
+    region.appendChild(toast);
+    window.setTimeout(() => {
+      toast.classList.add("is-leaving");
+      window.setTimeout(() => toast.remove(), 260);
+    }, 4200);
+  }
+
+  function saveFeedback({ form, progress, button, status, savingText }) {
+    const previousButtonText = button?.textContent || "";
+    const previousDisabled = button?.disabled || false;
+    let step = 1;
+    let timer;
+    const messages = ["Preparing details...", "Saving to Render...", "Confirming live portfolio..."];
+
+    function setProgress(percent, message) {
+      if (progress) progress.style.setProperty("--progress", `${percent}%`);
+      if (status) status.textContent = message;
+    }
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = savingText;
+    }
+    if (form) form.classList.add("is-saving");
+    if (progress) {
+      progress.hidden = false;
+      progress.setAttribute("aria-hidden", "false");
+    }
+    setProgress(18, messages[0]);
+    timer = window.setInterval(() => {
+      step = Math.min(step + 1, messages.length - 1);
+      setProgress(step === 1 ? 54 : 78, messages[step]);
+      if (step >= messages.length - 1) window.clearInterval(timer);
+    }, 650);
+
+    return {
+      done(message) {
+        window.clearInterval(timer);
+        setProgress(100, message);
+        showToast(message, "success");
+        window.setTimeout(() => {
+          if (progress) {
+            progress.hidden = true;
+            progress.setAttribute("aria-hidden", "true");
+            progress.style.setProperty("--progress", "0%");
+          }
+        }, 700);
+      },
+      fail(message) {
+        window.clearInterval(timer);
+        setProgress(100, message);
+        showToast(message, "error");
+      },
+      finish() {
+        if (button) {
+          button.disabled = previousDisabled;
+          button.textContent = previousButtonText;
+        }
+        if (form) form.classList.remove("is-saving");
+      }
+    };
+  }
+
   function categoryName(categoryId) {
     return data.categories.find((category) => category.id === categoryId)?.name || "Unassigned";
   }
@@ -388,19 +458,32 @@
 
   $("[data-project-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     const status = $("[data-project-status]");
+    const feedback = saveFeedback({
+      form,
+      progress: $("[data-project-progress]"),
+      button: $("[data-project-save]"),
+      status,
+      savingText: "Saving..."
+    });
     try {
-      const project = projectFromForm(new FormData(event.currentTarget));
+      const project = projectFromForm(new FormData(form));
       const projects = readProjects();
       const existingIndex = projects.findIndex((item) => item.id === project.id);
       if (existingIndex >= 0) projects[existingIndex] = project;
       else projects.unshift(project);
       saveProjects(projects);
       await saveProjectOnline(project);
-      resetProjectForm(existingIndex >= 0 ? "Project updated online. It will show on every device." : "Image project saved online. It will show on every device.");
+      const message = existingIndex >= 0 ? "Project updated online. It will show on every device." : "Image project saved online. It will show on every device.";
+      feedback.done(message);
+      resetProjectForm(message);
       renderDashboard();
     } catch (error) {
-      status.textContent = `${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`;
+      feedback.fail(`${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`);
+    } finally {
+      feedback.finish();
+      if (!$("[data-project-id]").value) $("[data-project-save]").textContent = "Save Image Project";
     }
   });
 
@@ -439,9 +522,17 @@
 
   $("[data-review-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const formElement = event.currentTarget;
     const status = $("[data-review-status]");
+    const feedback = saveFeedback({
+      form: formElement,
+      progress: $("[data-review-progress]"),
+      button: formElement.querySelector("button[type='submit']"),
+      status,
+      savingText: "Saving Review..."
+    });
     try {
-      const form = new FormData(event.currentTarget);
+      const form = new FormData(formElement);
       const photo = safeDirectImageUrl(form.get("photo"));
       const reviewText = String(form.get("review") || "").trim();
       if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
@@ -457,11 +548,13 @@
       reviews.unshift(review);
       saveReviews(reviews);
       await saveReviewOnline(review);
-      event.currentTarget.reset();
-      status.textContent = "Client review saved online. It will show on every device.";
+      formElement.reset();
+      feedback.done("Client review saved online. It will show on every device.");
       renderDashboard();
     } catch (error) {
-      status.textContent = `${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`;
+      feedback.fail(`${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`);
+    } finally {
+      feedback.finish();
     }
   });
 

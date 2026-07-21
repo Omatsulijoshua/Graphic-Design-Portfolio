@@ -79,6 +79,9 @@
                 <button class="button primary" type="submit" data-project-save>Save Image Project</button>
                 <button class="button ghost" type="button" data-cancel-edit hidden>Cancel Edit</button>
               </div>
+              <div class="admin-save-progress" data-project-progress hidden aria-hidden="true">
+                <span></span>
+              </div>
               <p class="form-status" data-project-status role="status"></p>
             </form>
             <aside class="admin-live-preview" data-admin-preview>
@@ -129,6 +132,9 @@
             <label class="full-span">Client Satisfaction Image Link<input name="photo" type="url" placeholder="Google Drive or direct image URL"></label>
             <label class="full-span">Review Text<textarea name="review" rows="4" placeholder="Paste or type the client review"></textarea></label>
             <button class="button primary" type="submit">Save Review</button>
+            <div class="admin-save-progress" data-review-progress hidden aria-hidden="true">
+              <span></span>
+            </div>
             <p class="form-status" data-review-status role="status"></p>
           </form>
           <div class="admin-help">
@@ -143,6 +149,7 @@
         </section>
       </section>
     </main>
+    <div class="admin-toast-region" data-admin-toasts aria-live="polite" aria-atomic="true"></div>
     <script src="data.js?v=20260721-1"></script>
     <script src="admin.js?v=20260721-1"></script>
   </body>
