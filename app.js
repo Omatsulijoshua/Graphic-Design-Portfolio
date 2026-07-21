@@ -40,6 +40,7 @@
   function normalizeImageUrl(url) {
     const value = String(url || "").trim();
     if (!value) return "";
+    if (/^data:image\//i.test(value)) return value;
     const driveMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
     if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
     const imgurPageMatch = value.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:[?#].*)?$/i);

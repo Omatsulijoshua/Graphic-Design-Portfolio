@@ -47,7 +47,35 @@
       throw new Error("For review screenshots, use a direct image link instead of an Imgur album link.");
     }
     const value = normalizeImageUrl(url);
-    return /^https?:\/\//i.test(value) ? value : "";
+    return /^(https?:\/\/|data:image\/)/i.test(value) ? value : "";
+  }
+
+  function fileToImage(file) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("That screenshot could not be opened."));
+      image.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function screenshotToDataUrl(file) {
+    if (!file) return "";
+    if (!file.type.startsWith("image/")) throw new Error("Please choose an image screenshot.");
+    const image = await fileToImage(file);
+    const maxWidth = 1100;
+    const scale = Math.min(1, maxWidth / image.naturalWidth);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(image.src);
+    const dataUrl = canvas.toDataURL("image/webp", 0.78);
+    if (dataUrl.length > 850000) {
+      throw new Error("This screenshot is too large. Please crop it or use a shared image link.");
+    }
+    return dataUrl;
   }
 
   function escapeHtml(value) {
@@ -627,7 +655,8 @@
     });
     try {
       const form = new FormData(formElement);
-      const photo = safeDirectImageUrl(form.get("photo"));
+      const screenshotFile = formElement.elements.screenshot?.files?.[0];
+      const photo = screenshotFile ? await screenshotToDataUrl(screenshotFile) : safeDirectImageUrl(form.get("photo"));
       const reviewText = String(form.get("review") || "").trim();
       if (!photo && !reviewText) throw new Error("Please add a review message or a client satisfaction image link.");
       const reviews = readReviews();

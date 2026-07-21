@@ -11,7 +11,7 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
 app.use(cors({
   origin(origin, callback) {
     if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {

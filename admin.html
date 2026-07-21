@@ -144,7 +144,8 @@
           <form class="admin-form" data-review-form>
             <label>Client Name<input name="name" required placeholder="Client name"></label>
             <label>Rating<select name="rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label>
-            <label class="full-span">Client Satisfaction Image Link<input name="photo" type="url" placeholder="Google Drive or direct image URL"></label>
+            <label class="full-span">Upload Screenshot<input name="screenshot" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+            <label class="full-span">Or Paste Image Link<input name="photo" type="url" placeholder="Google Drive or direct image URL"></label>
             <label class="full-span">Review Text<textarea name="review" rows="4" placeholder="Paste or type the client review"></textarea></label>
             <button class="button primary" type="submit">Save Review</button>
             <div class="admin-save-progress" data-review-progress hidden aria-hidden="true">
@@ -153,7 +154,7 @@
             <p class="form-status" data-review-status role="status"></p>
           </form>
           <div class="admin-help">
-            <strong>Where to upload client satisfaction images:</strong> paste the review screenshot link in the field above. Google Drive links should be shared as anyone with the link can view. For review screenshots, use a direct image link.
+            <strong>Where to upload client satisfaction images:</strong> choose a screenshot file from your device, or paste a shared Google Drive/direct image link. Screenshots are compressed before saving.
           </div>
           <div class="table-wrap review-table-wrap">
             <table>
