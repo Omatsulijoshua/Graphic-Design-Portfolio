@@ -3,9 +3,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "node --check app.js && node --check admin.js && node --check login.js"
+    "start": "node server.cjs",
+    "check": "node --check app.js && node --check admin.js && node --check login.js && node --check server.cjs"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.0.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
   }
 }

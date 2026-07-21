@@ -11,6 +11,7 @@
   const REACTIONS_KEY = "jgw_project_reactions";
   const CART_KEY = "jgw_saved_design_cart";
   const ACCOUNT_KEY = "jgw_shop_account";
+  const API_BASE_URL = (window.JGW_API_BASE_URL || "https://joshgraphics-portfolio-api.onrender.com").replace(/\/$/, "");
 
   function importSharedPortfolio() {
     const prefix = "#jgw-sync=";
@@ -231,10 +232,19 @@
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
-  async function fetchJson(url) {
-    const response = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-    return response.json();
+  async function fetchJson(path) {
+    const urls = API_BASE_URL ? [`${API_BASE_URL}${path}`, path] : [path];
+    let lastError;
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, { headers: { Accept: "application/json" } });
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        return response.json();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
   }
 
   async function loadBackendData() {

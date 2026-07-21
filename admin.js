@@ -4,6 +4,7 @@
   const REVIEWS_KEY = "jgw_client_reviews";
   const data = window.JGW_DATA;
   const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const API_BASE_URL = (window.JGW_API_BASE_URL || "https://joshgraphics-portfolio-api.onrender.com").replace(/\/$/, "");
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
@@ -91,13 +92,22 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projects.map(normalizeProject)));
   }
 
-  async function fetchJson(url, options = {}) {
-    const response = await fetch(url, {
-      headers: { "Content-Type": "application/json", Accept: "application/json", ...(options.headers || {}) },
-      ...options
-    });
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-    return response.json();
+  async function fetchJson(path, options = {}) {
+    const urls = API_BASE_URL ? [`${API_BASE_URL}${path}`, path] : [path];
+    let lastError;
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          headers: { "Content-Type": "application/json", Accept: "application/json", ...(options.headers || {}) },
+          ...options
+        });
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        return response.json();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
   }
 
   async function loadBackendData() {
@@ -390,7 +400,7 @@
       resetProjectForm(existingIndex >= 0 ? "Project updated online. It will show on every device." : "Image project saved online. It will show on every device.");
       renderDashboard();
     } catch (error) {
-      status.textContent = `${error.message} If DATABASE_URL is not added to Vercel yet, it will only save on this browser.`;
+      status.textContent = `${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`;
     }
   });
 
@@ -451,7 +461,7 @@
       status.textContent = "Client review saved online. It will show on every device.";
       renderDashboard();
     } catch (error) {
-      status.textContent = `${error.message} If DATABASE_URL is not added to Vercel yet, it will only save on this browser.`;
+      status.textContent = `${error.message} If DATABASE_URL is not added to Render yet, it will only save on this browser.`;
     }
   });
 
