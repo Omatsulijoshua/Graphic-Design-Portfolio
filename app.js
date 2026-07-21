@@ -351,15 +351,23 @@
 
   function renderCategories() {
     const grid = $("[data-categories]");
-    grid.innerHTML = data.categories.map((category) => `
-      <article class="category-card" tabindex="0" role="button" data-category-id="${category.id}" style="--cover:${category.cover}">
+    grid.innerHTML = data.categories.map((category) => {
+      const thumbnailProject = data.projects.find((project) => {
+        const media = projectMedia(project);
+        return project.category === category.id && media.type === "image" && media.url;
+      });
+      const thumbnail = thumbnailProject ? projectMedia(thumbnailProject).url : "";
+      return `
+      <article class="category-card${thumbnail ? " has-thumbnail" : ""}" tabindex="0" role="button" data-category-id="${category.id}" style="--cover:${category.cover}">
+        ${thumbnail ? `<img class="category-thumbnail" src="${escapeHtml(thumbnail)}" alt="" loading="lazy">` : ""}
         <div>
           <strong>${category.name}</strong>
           <span>${categoryProjectCount(category.id)} Projects</span>
           <span>Click to View</span>
         </div>
       </article>
-    `).join("");
+    `;
+    }).join("");
   }
 
   function renderShopControls() {
