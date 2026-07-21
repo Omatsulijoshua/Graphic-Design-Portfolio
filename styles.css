@@ -437,6 +437,23 @@ td { color: var(--muted); }
 .admin-panel-section {
   margin: 2rem 0;
 }
+.admin-mobile-sync {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(217, 164, 65, 0.35);
+  border-radius: var(--radius);
+  background: rgba(217, 164, 65, 0.08);
+}
+.admin-mobile-sync p { margin: 0.35rem 0 0; color: var(--muted); }
+.admin-mobile-sync .form-status { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .admin-mobile-sync { grid-template-columns: 1fr; }
+  .admin-mobile-sync .form-status { grid-column: auto; }
+}
 .admin-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -567,6 +584,8 @@ td { color: var(--muted); }
 .review-table-wrap { margin-top: 1rem; }
 
 @media (max-width: 560px) {
+  .project-art.image-art { height: min(78vw, 420px); min-height: 230px; }
+  .image-art img, .embed-art iframe { min-height: 0; }
   .service-checks > div { grid-template-columns: 1fr; }
   .album-pricing {
     display: flex;
@@ -765,6 +784,12 @@ td { color: var(--muted); }
 .shop-section {
   background: rgba(255, 255, 255, 0.025);
 }
+.shop-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(170px, 230px) minmax(170px, 230px);
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
 .shop-account {
   width: min(420px, 100%);
 }
@@ -789,6 +814,33 @@ td { color: var(--muted); }
   padding: 0;
   overflow: hidden;
 }
+.album-product-card {
+  position: relative;
+}
+.album-product-media {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 260px;
+  background: #050308;
+}
+.album-product-media > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.album-product-media > div:only-child {
+  grid-column: 1 / -1;
+}
+.album-product-media .project-art {
+  width: 100%;
+  height: 100%;
+  min-height: 130px;
+}
+.album-product-media .project-art::after {
+  display: none;
+}
+.album-product-media iframe {
+  pointer-events: none;
+}
 .shop-card .project-art {
   min-height: 230px;
 }
@@ -802,6 +854,9 @@ td { color: var(--muted); }
   font-size: 0.76rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+.shop-card-body h3 {
+  font-size: 1.35rem;
 }
 .shop-card-actions {
   display: flex;
@@ -870,6 +925,12 @@ td { color: var(--muted); }
   min-height: 2.35rem;
   margin-top: 0.5rem;
   padding: 0.55rem 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .shop-toolbar {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {

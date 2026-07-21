@@ -12,6 +12,25 @@
   const CART_KEY = "jgw_saved_design_cart";
   const ACCOUNT_KEY = "jgw_shop_account";
 
+  function importSharedPortfolio() {
+    const prefix = "#jgw-sync=";
+    if (!location.hash.startsWith(prefix)) return;
+    try {
+      const encoded = location.hash.slice(prefix.length).replace(/-/g, "+").replace(/_/g, "/");
+      const padded = encoded + "=".repeat((4 - encoded.length % 4) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+      const payload = JSON.parse(new TextDecoder().decode(bytes));
+      if (Array.isArray(payload.projects)) localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.projects));
+      if (Array.isArray(payload.reviews)) localStorage.setItem(REVIEWS_KEY, JSON.stringify(payload.reviews));
+      history.replaceState(null, "", location.pathname + location.search);
+    } catch (error) {
+      console.warn("The shared portfolio link could not be imported.");
+    }
+  }
+
+  importSharedPortfolio();
+
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[char]);
   }
@@ -67,7 +86,7 @@
   function readCart() {
     try {
       const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map((item) => String(item).includes(":") ? String(item) : cartPhotoId(item)) : [];
     } catch (error) {
       return [];
     }
@@ -89,9 +108,66 @@
     return data.projects.find((project) => project.id === projectId);
   }
 
+  function albumId(categoryId, albumTitle) {
+    return `${categoryId || "design"}::${albumTitle || "Portfolio"}`;
+  }
+
+  function cartAlbumId(album) {
+    return `album:${album.id}`;
+  }
+
+  function cartPhotoId(projectId) {
+    return `photo:${projectId}`;
+  }
+
+  function albumProducts() {
+    const groups = new Map();
+    data.projects.forEach((project) => {
+      const category = data.categories.find((item) => item.id === project.category);
+      const title = project.album || `${category?.name || "Design"} Album`;
+      const id = albumId(project.category, title);
+      if (!groups.has(id)) {
+        groups.set(id, {
+          id,
+          title,
+          categoryId: project.category,
+          categoryName: category?.name || "Design",
+          description: category?.description || "Premium design album",
+          projects: [],
+          latestDate: project.date || "",
+          minPrice: Number(project.price || 0)
+        });
+      }
+      const album = groups.get(id);
+      album.projects.push(project);
+      album.latestDate = [album.latestDate, project.date || ""].sort().pop();
+      const price = Number(project.price || 0);
+      album.minPrice = album.minPrice ? Math.min(album.minPrice, price || album.minPrice) : price;
+    });
+    return Array.from(groups.values());
+  }
+
+  function findAlbum(albumKey) {
+    return albumProducts().find((album) => album.id === albumKey);
+  }
+
+  function albumTotal(album) {
+    return album.projects.reduce((total, project) => total + Number(project.price || 0), 0);
+  }
+
+  function saveAlbum(albumKey) {
+    const cart = readCart();
+    const id = cartAlbumId({ id: albumKey });
+    if (!cart.includes(id)) cart.unshift(id);
+    saveCart(cart);
+    renderCart();
+    renderPricing();
+  }
+
   function saveDesign(projectId) {
     const cart = readCart();
-    if (!cart.includes(projectId)) cart.unshift(projectId);
+    const id = cartPhotoId(projectId);
+    if (!cart.includes(id)) cart.unshift(id);
     saveCart(cart);
     renderCart();
     renderPricing();
@@ -184,6 +260,15 @@
         </div>
       </article>
     `).join("");
+  }
+
+  function renderShopControls() {
+    const categorySelect = $("[data-shop-category]");
+    if (!categorySelect) return;
+    categorySelect.innerHTML = `
+      <option value="">All album sections</option>
+      ${data.categories.map((category) => `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`).join("")}
+    `;
   }
 
   function sortProjects(projects) {
@@ -315,50 +400,87 @@
   }
 
   function renderPricing() {
-    const projects = [...data.projects].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const search = String($("[data-shop-search]")?.value || "").trim().toLowerCase();
+    const categoryFilter = $("[data-shop-category]")?.value || "";
+    const sort = $("[data-shop-sort]")?.value || "newest";
     const cart = readCart();
-    $("[data-pricing]").innerHTML = projects.length ? projects.map((project) => {
-      const title = escapeHtml(project.title);
-      const category = data.categories.find((item) => item.id === project.category);
-      const saved = cart.includes(project.id);
+    let albums = albumProducts()
+      .filter((album) => !categoryFilter || album.categoryId === categoryFilter)
+      .filter((album) => {
+        const haystack = [album.title, album.categoryName, album.description, album.minPrice, album.projects.map((project) => project.title).join(" ")].join(" ").toLowerCase();
+        return !search || haystack.includes(search);
+      });
+
+    if (sort === "priceLow") albums.sort((a, b) => a.minPrice - b.minPrice);
+    else if (sort === "priceHigh") albums.sort((a, b) => b.minPrice - a.minPrice);
+    else if (sort === "name") albums.sort((a, b) => a.title.localeCompare(b.title));
+    else albums.sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate));
+
+    $("[data-pricing]").innerHTML = albums.length ? albums.map((album) => {
+      const title = escapeHtml(album.title);
+      const saved = cart.includes(cartAlbumId(album));
+      const previews = album.projects.slice(0, 4);
       return `
-      <article class="pricing-card shop-card" data-shop-project="${escapeHtml(project.id)}">
-        ${projectMediaMarkup(project, title)}
+      <article class="pricing-card shop-card album-product-card" data-shop-album="${escapeHtml(album.id)}">
+        <div class="album-product-media">
+          ${previews.map((project) => `<div>${projectMediaMarkup(project, escapeHtml(project.title))}</div>`).join("")}
+        </div>
         <div class="shop-card-body">
-          <span>${escapeHtml(category?.name || "Design")}</span>
+          <span>${escapeHtml(album.categoryName)}</span>
           <h3>${title}</h3>
-          <p>${escapeHtml(project.album || "Portfolio")}</p>
-          <strong>${money.format(Number(project.price || 0))}</strong>
+          <p>${album.projects.length} photo${album.projects.length === 1 ? "" : "s"} in this album</p>
+          <strong>From ${money.format(Number(album.minPrice || 0))}</strong>
           <div class="shop-card-actions">
-            <button class="button primary" type="button" data-save-design="${escapeHtml(project.id)}">${saved ? "Saved" : "Save to Cart"}</button>
-            <button class="button ghost" type="button" data-view-design="${escapeHtml(project.id)}">View</button>
+            <button class="button primary" type="button" data-save-album="${escapeHtml(album.id)}">${saved ? "Album Saved" : "Add Album to Cart"}</button>
+            <button class="button ghost" type="button" data-view-album="${escapeHtml(album.id)}">View Album</button>
           </div>
         </div>
       </article>
     `;
-    }).join("") : `<article class="pricing-card shop-empty"><h3>No posted designs yet</h3><p>Add portfolio images from Admin and they will appear in this shop section.</p><strong>Pending</strong></article>`;
+    }).join("") : `<article class="pricing-card shop-empty"><h3>No albums posted yet</h3><p>Add portfolio images from Admin and give them album names. Each album will appear here as a product.</p><strong>Pending</strong></article>`;
     renderCart();
   }
 
   function renderCart() {
     const account = readAccount();
-    const cartProjects = readCart().map(findProject).filter(Boolean);
+    const cartItems = readCart().map((item) => {
+      if (item.startsWith("album:")) return { type: "album", album: findAlbum(item.slice(6)), id: item };
+      if (item.startsWith("photo:")) return { type: "photo", project: findProject(item.slice(6)), id: item };
+      return null;
+    }).filter((item) => item && (item.album || item.project));
     const summary = $("[data-cart-summary]");
     const accountStatus = $("[data-account-status]");
     const accountInput = $("[data-account-form] input[name='name']");
     if (account && accountInput && !accountInput.value) accountInput.value = account.name || "";
-    if (accountStatus) accountStatus.textContent = account?.name ? `Saved for ${account.name}` : "Create a simple browser account to keep saved designs on this phone.";
-    if (summary) summary.textContent = cartProjects.length ? `${cartProjects.length} saved design${cartProjects.length === 1 ? "" : "s"}` : "No saved designs yet";
-    $("[data-cart-items]").innerHTML = cartProjects.length ? cartProjects.map((project) => `
-      <article class="cart-item">
-        <div>${projectMediaMarkup(project, escapeHtml(project.title))}</div>
-        <section>
-          <strong>${escapeHtml(project.title)}</strong>
-          <span>${escapeHtml(project.album || "Portfolio")} / ${money.format(Number(project.price || 0))}</span>
-          <button class="button ghost" type="button" data-remove-cart="${escapeHtml(project.id)}">Remove</button>
-        </section>
-      </article>
-    `).join("") : `<p class="cart-empty">Saved designs will appear here.</p>`;
+    if (accountStatus) accountStatus.textContent = account?.name ? `Saved for ${account.name}` : "Create a simple browser account to keep saved albums on this phone.";
+    if (summary) summary.textContent = cartItems.length ? `${cartItems.length} saved item${cartItems.length === 1 ? "" : "s"}` : "No albums saved yet";
+    $("[data-cart-items]").innerHTML = cartItems.length ? cartItems.map((item) => {
+      if (item.type === "album") {
+        const album = item.album;
+        const preview = album.projects[0];
+        return `
+          <article class="cart-item">
+            <div>${preview ? projectMediaMarkup(preview, escapeHtml(album.title)) : ""}</div>
+            <section>
+              <strong>${escapeHtml(album.title)}</strong>
+              <span>Album / ${album.projects.length} photo${album.projects.length === 1 ? "" : "s"} / From ${money.format(album.minPrice || 0)}</span>
+              <button class="button ghost" type="button" data-remove-cart="${escapeHtml(item.id)}">Remove</button>
+            </section>
+          </article>
+        `;
+      }
+      const project = item.project;
+      return `
+        <article class="cart-item">
+          <div>${projectMediaMarkup(project, escapeHtml(project.title))}</div>
+          <section>
+            <strong>${escapeHtml(project.title)}</strong>
+            <span>Photo / ${escapeHtml(project.album || "Portfolio")} / ${money.format(Number(project.price || 0))}</span>
+            <button class="button ghost" type="button" data-remove-cart="${escapeHtml(item.id)}">Remove</button>
+          </section>
+        </article>
+      `;
+    }).join("") : `<p class="cart-empty">Saved albums and photos will appear here.</p>`;
   }
 
   function renderTestimonials(index = 0) {
@@ -470,6 +592,29 @@
       if (card) openProject(card.dataset.projectId);
     });
     $("[data-pricing]").addEventListener("click", (event) => {
+      const albumButton = event.target.closest("[data-save-album]");
+      if (albumButton) {
+        saveAlbum(albumButton.dataset.saveAlbum);
+        return;
+      }
+      const viewAlbumButton = event.target.closest("[data-view-album]");
+      if (viewAlbumButton) {
+        const album = findAlbum(viewAlbumButton.dataset.viewAlbum);
+        if (!album) return;
+        currentCategoryId = album.categoryId;
+        currentAlbum = album.title;
+        renderGallery(album.categoryId);
+        return;
+      }
+      const albumCard = event.target.closest("[data-shop-album]");
+      if (albumCard) {
+        const album = findAlbum(albumCard.dataset.shopAlbum);
+        if (!album) return;
+        currentCategoryId = album.categoryId;
+        currentAlbum = album.title;
+        renderGallery(album.categoryId);
+        return;
+      }
       const saveButton = event.target.closest("[data-save-design]");
       if (saveButton) {
         saveDesign(saveButton.dataset.saveDesign);
@@ -489,6 +634,11 @@
       updateModal();
       $("[data-modal]").hidden = false;
       document.body.classList.add("modal-open");
+    });
+    ["[data-shop-search]", "[data-shop-category]", "[data-shop-sort]"].forEach((selector) => {
+      const element = $(selector);
+      if (element) element.addEventListener("input", renderPricing);
+      if (element) element.addEventListener("change", renderPricing);
     });
     $("[data-account-form]").addEventListener("submit", (event) => {
       event.preventDefault();
@@ -571,6 +721,7 @@
 
   renderServices();
   renderCategories();
+  renderShopControls();
   renderPricing();
   renderTestimonials();
   renderFaqAndContact();

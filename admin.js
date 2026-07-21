@@ -103,6 +103,31 @@
     localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
   }
 
+  function encodeMobilePortfolio() {
+    const payload = JSON.stringify({ version: 1, projects: readProjects(), reviews: readReviews() });
+    const bytes = new TextEncoder().encode(payload);
+    let binary = "";
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  async function copyMobilePortfolioLink() {
+    const status = $("[data-mobile-link-status]");
+    if (!readProjects().length && !readReviews().length) {
+      status.textContent = "Add at least one project or review before creating the mobile link.";
+      return;
+    }
+    const publicPath = location.pathname.replace(/(?:admin(?:\.html)?|login(?:\.html)?)\/?$/i, "");
+    const link = `${location.origin}${publicPath || "/"}#jgw-sync=${encodeMobilePortfolio()}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      status.textContent = "Mobile link copied. Send it to your phone and open it once.";
+    } catch (error) {
+      window.prompt("Copy this mobile portfolio link:", link);
+      status.textContent = "Send the copied link to your phone and open it once.";
+    }
+  }
+
   function allProjects() {
     return [...data.projects.map(normalizeProject), ...readProjects()];
   }
@@ -315,6 +340,7 @@
   });
 
   $("[data-project-form]").addEventListener("input", updatePreview);
+  $("[data-copy-mobile-link]").addEventListener("click", copyMobilePortfolioLink);
   $("[data-cancel-edit]").addEventListener("click", () => resetProjectForm("Edit cancelled."));
 
   $("[data-admin-projects]").addEventListener("click", (event) => {

@@ -12,7 +12,7 @@
     <meta property="og:image" content="assets/hero-creative-studio.png">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="/">
-    <link rel="stylesheet" href="styles.css?v=20260720-4">
+    <link rel="stylesheet" href="styles.css?v=20260721-1">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -115,8 +115,8 @@
       <section class="section pricing shop-section" id="shop">
         <div class="section-head split">
           <div>
-            <p class="eyebrow">Design shop</p>
-            <h2>Browse posted designs, save favorites, and build your order list</h2>
+            <p class="eyebrow">Album shop</p>
+            <h2>Choose a photo album, view the designs inside, and add the album to your cart</h2>
           </div>
           <div class="shop-account" id="cart">
             <form data-account-form>
@@ -126,12 +126,22 @@
             <p data-account-status></p>
           </div>
         </div>
+        <div class="shop-toolbar">
+          <input data-shop-search type="search" placeholder="Search albums, sections, prices">
+          <select data-shop-category></select>
+          <select data-shop-sort>
+            <option value="newest">Newest albums</option>
+            <option value="priceLow">Price: Low to High</option>
+            <option value="priceHigh">Price: High to Low</option>
+            <option value="name">Album name</option>
+          </select>
+        </div>
         <div class="pricing-grid" data-pricing></div>
         <aside class="cart-panel">
           <div class="cart-head">
             <div>
-              <p class="eyebrow">Saved cart</p>
-              <h3 data-cart-summary>No saved designs yet</h3>
+              <p class="eyebrow">Album cart</p>
+              <h3 data-cart-summary>No albums saved yet</h3>
             </div>
             <button class="button ghost" type="button" data-clear-cart>Clear Saved</button>
           </div>
@@ -230,7 +240,7 @@
           <div class="hero-actions">
             <button class="button secondary" type="button" data-fullscreen>Fullscreen</button>
             <button class="button ghost" type="button" data-share>Share</button>
-            <button class="button secondary" type="button" data-modal-save>Save Design</button>
+            <button class="button secondary" type="button" data-modal-save>Save Photo</button>
             <a class="button primary" data-modal-whatsapp href="#">WhatsApp Inquiry</a>
           </div>
         </div>
@@ -243,8 +253,8 @@
       <a href="login.html">Admin Login</a>
     </footer>
 
-    <script src="data.js?v=20260720-4"></script>
-    <script src="app.js?v=20260720-4"></script>
+    <script src="data.js?v=20260721-1"></script>
+    <script src="app.js?v=20260721-1"></script>
   </body>
 </html>
 
